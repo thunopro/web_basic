@@ -6,10 +6,4 @@
     display: flex;
     justify-content: space-between;
     width: 300px;
-    background-color: green;
-}
-
-#btn-dec{
-    color:red;
-    background-color: purple;
 }
