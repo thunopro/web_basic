@@ -1,0 +1,132 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 24px;
+    background-color: #f0f4f8;
+    color: #1e293b;
+}
+
+.container {
+    max-width: 960px;
+    margin: 0 auto;
+    background: white;
+    padding: 28px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+header {
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 18px;
+    margin-bottom: 24px;
+}
+
+header h1 {
+    margin: 0 0 8px 0;
+    color: #1d4ed8;
+    font-size: 1.8rem;
+}
+
+header p {
+    margin: 0;
+    color: #64748b;
+}
+
+.actions {
+    margin-bottom: 24px;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+}
+
+button {
+    background-color: #2563eb;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+button:hover {
+    background-color: #1d4ed8;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+button:disabled {
+    background-color: #94a3b8;
+    cursor: not-allowed;
+}
+
+#statusInfo {
+    font-style: italic;
+    font-size: 0.95rem;
+    color: #64748b;
+}
+
+.status-loading {
+    color: #2563eb !important;
+}
+
+.status-success {
+    color: #15803d !important;
+}
+
+.status-error {
+    color: #dc2626 !important;
+}
+
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 18px;
+    margin-top: 15px;
+}
+
+.prediction-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 18px;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.prediction-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+}
+
+.prediction-card h3 {
+    margin: 0 0 10px 0;
+    color: #0f172a;
+    font-size: 1.1rem;
+    line-height: 1.4;
+}
+
+.price-badge {
+    display: inline-block;
+    background-color: #dcfce7;
+    color: #15803d;
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 6px 10px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+}
+
+.details {
+    font-size: 0.92rem;
+    color: #475569;
+    line-height: 1.6;
+}
+
+.details p {
+    margin: 4px 0;
+}

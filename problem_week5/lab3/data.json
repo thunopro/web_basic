@@ -1,0 +1,42 @@
+[
+    {
+        "id": 1,
+        "address": "72 Tran Dai Nghia, Hai Ba Trung, Hanoi",
+        "bedrooms": 3,
+        "area_sqm": 85,
+        "predicted_price_vnd": 4250000000,
+        "confidence": 0.94
+    },
+    {
+        "id": 2,
+        "address": "15 Le Thanh Nghi, Hai Ba Trung, Hanoi",
+        "bedrooms": 2,
+        "area_sqm": 60,
+        "predicted_price_vnd": 3100000000,
+        "confidence": 0.89
+    },
+    {
+        "id": 3,
+        "address": "120 Cau Giay, Cau Giay, Hanoi",
+        "bedrooms": 4,
+        "area_sqm": 120,
+        "predicted_price_vnd": 6800000000,
+        "confidence": 0.96
+    },
+    {
+        "id": 4,
+        "address": "58 Nguyen Trai, Thanh Xuan, Hanoi",
+        "bedrooms": 1,
+        "area_sqm": 45,
+        "predicted_price_vnd": 2400000000,
+        "confidence": 0.88
+    },
+    {
+        "id": 5,
+        "address": "88 Vo Chi Cong, Tay Ho, Hanoi",
+        "bedrooms": 3,
+        "area_sqm": 95,
+        "predicted_price_vnd": 5500000000,
+        "confidence": 0.92
+    }
+]

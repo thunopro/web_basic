@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 2 - Week 05: Fetching Real Data</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Lab 2 - Week 05: Fetching Real Data</h1>
+        <p>Gọi API từ <strong>JSONPlaceholder</strong> và hiển thị vào bảng bên dưới (không tải lại trang).</p>
+        
+        <div class="controls">
+            <button id="btnLoad" class="btn btn-load">Load Users</button>
+            <button id="btnErase" class="btn btn-erase">Erase</button>
+            <span id="statusMessage" class="status"></span>
+        </div>
+
+        <table id="user-table">
+            <thead>
+                <tr>
+                    <th class="col-id">ID</th>
+                    <th class="col-name">Name</th>
+                    <th class="col-email">Email</th>
+                    <th class="col-city">City</th>
+                    <th class="col-company">Company</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
