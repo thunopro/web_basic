@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>House Price</title>
+</head>
+<body>
+    <form id="priceForm">
+        <input type="number" id="area" placeholder="Area" required>
+        <input type="number" id="bedrooms" placeholder="Bedrooms" required>
+        <input type="text" id="location" placeholder="Location">
+        <button type="submit">Predict</button>
+    </form>
+    <div id="result"></div>
+    <script>
+        document.getElementById("priceForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const area = document.getElementById("area").value;
+            const bedrooms = document.getElementById("bedrooms").value;
+            const location = document.getElementById("location").value;
+            let url = `/predict?area=${area}&bedrooms=${bedrooms}`;
+            if (location) url += `&location=${location}`;
+            
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById("result").innerText = data.predicted_price.toLocaleString() + " VND";
+                } else {
+                    document.getElementById("result").innerText = "Error";
+                }
+            } catch (err) {
+                document.getElementById("result").innerText = "Failed";
+            }
+        });
+    </script>
+</body>
+</html>
