@@ -1,0 +1,17 @@
+INFO:     Started server process [21647]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)
+2026-10-01 17:25:13,601 INFO sqlalchemy.engine.Engine select pg_catalog.version()
+2026-10-01 17:25:13,601 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-10-01 17:25:13,602 INFO sqlalchemy.engine.Engine select current_schema()
+2026-10-01 17:25:13,602 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-10-01 17:25:13,603 INFO sqlalchemy.engine.Engine show standard_conforming_strings
+2026-10-01 17:25:13,603 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-10-01 17:25:13,606 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-10-01 17:25:13,614 INFO sqlalchemy.engine.Engine SELECT hero.name, hero.age, hero.team_id, hero.power, hero.id, hero.secret_name 
+FROM hero ORDER BY hero.id 
+ LIMIT %(param_1)s::INTEGER OFFSET %(param_2)s::INTEGER
+2026-10-01 17:25:13,614 INFO sqlalchemy.engine.Engine [generated in 0.00020s] {'param_1': 10, 'param_2': 0}
+INFO:     127.0.0.1:36044 - "GET /heroes HTTP/1.1" 200 OK
+2026-10-01 17:25:13,617 INFO sqlalchemy.engine.Engine ROLLBACK
