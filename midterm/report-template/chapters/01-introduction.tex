@@ -1,49 +1,47 @@
 \section{Introduction}
 
 \subsection{Project overview}
-Rùa Toán Basic is a mathematics practice website for lower secondary students. It is the
-``basic'' version of the Rùa Toán product: the same educational goal and the same content
-catalogue, but rebuilt with a much simpler and more transparent technology stack. The
-frontend is plain HTML, CSS, and JavaScript with no framework and no build step; the
-backend is a small FastAPI application running on Vercel's Python runtime; user accounts
-and uploaded photographs are stored in PostgreSQL. The content catalogue (exam collections,
-problems, lessons, books, and documents) is still read from versioned JSON files, exactly
-as in the original project, so the two versions share one source of truth for learning
-material.
+Rùa Toán Basic is a mathematics practice platform designed for lower secondary students. It represents
+a deliberate, ground-up rebuild of the Rùa Toán learning platform with a focus on simplicity,
+architectural transparency, and pedagogical alignment. The frontend is implemented entirely with
+plain HTML5, CSS3, and vanilla JavaScript without any framework dependencies or build steps; the backend
+is powered by a lightweight FastAPI service running serverless on Vercel; user accounts and homework photo
+submissions are managed cleanly in PostgreSQL. Both versions share the exact same comprehensive curriculum
+catalogue (3,381 collections, 33,929 problems, 90 lessons, 216 books, and 89 documents) stored as versioned
+JSON files.
 
-The live demo of this basic version is published at
-\texttt{https://ruatoanbasic.vercel.app}. The original, more feature-rich version remains
-at \texttt{https://ruatoan.vercel.app} and is kept unchanged; the basic version does not
-replace it. Instead, the basic version exists to make every layer of the application
-inspectable and maintainable: a student or instructor can open the browser's developer
-tools and read the network requests, the DOM, and the CSS directly, and can read the entire
-backend in five short Python files.
+The live production deployment for this basic version is hosted at
+\texttt{https://ruatoanbasic.vercel.app} (source code: \texttt{https://github.com/thunopro/ruatoan\_basic}).
+The original flagship version is available at \texttt{https://ruatoan.vercel.app}
+(source code: \texttt{https://github.com/thunopro/ruatoan}).
 
-\subsection{Motivation}
-The original Rùa Toán application is built with Next.js, React, TypeScript, and Auth.js.
-That stack is powerful, but it hides a great deal of behaviour behind a framework and a
-build pipeline: server components, client components, route handlers, a content cache, and
-an OAuth session layer. For a course on web design and programming, and for a team that
-wants to understand exactly how a request travels from the browser to the database and
-back, that opacity is a genuine cost. The basic version removes it.
+\subsection{Motivation and pedagogical context: from the advanced platform to the basic foundation}
+The creation of Rùa Toán Basic arose from an honest reflection on the learning journey in web development.
+Initially, the author conceived and ``vibed'' the flagship Rùa Toán platform using an advanced, state-of-the-art
+technology stack: Next.js 15, React 19, TypeScript, Tailwind CSS, and Auth.js. While that version was ambitious
+and feature-rich, it relied heavily on framework abstractions---server-side rendering pipelines, complex
+component hydration, intricate bundler magic, and automated authentication middleware.
 
-Three concrete motivations drove the rebuild:
+For a student beginning with the university curriculum of \textit{Web Design and Programming}, that high level of
+abstraction proved overwhelming to fully grasp from first principles. It masked the fundamental mechanics of the web:
+how an HTTP request is structured, how the browser DOM is updated imperatively, how cookies are cryptographically signed,
+and how client scripts communicate with a RESTful backend API.
 
+Recognizing that true mastery requires understanding the foundations, the author made the deliberate decision to
+pivot and ``vibe'' a fresh, transparent version: \textbf{Rùa Toán Basic}. This rebuild intentionally eliminates
+all framework scaffolding in order to create a genuine environment for learning, experimentation, and mastery:
 \begin{enumerate}
-  \item \textbf{Inspectability.} Every page is a single HTML file, every interaction is a
-        short JavaScript function, and every backend route is a short FastAPI handler. A
-        reader can follow a feature from its button to its SQL statement without crossing
-        framework boundaries.
-  \item \textbf{Deployment clarity.} Vercel supports FastAPI through its Python runtime,
-        but the routing, bundling, and cold-start behaviour differ from the Node.js runtime.
-        Rebuilding against that runtime forced an explicit, documented \texttt{vercel.json}
-        and a small, auditable set of dependencies.
-  \item \textbf{A controlled scope.} The original application contains advanced features
-        (Google OAuth, a device-token photo API, a content crawl and preparation pipeline)
-        that are not all needed for the core learning loop. The basic version keeps the
-        learning loop---browse collections, read problems, study lessons, consult the
-        library, mark problems, submit photographs---and drops the rest, while recording
-        those omissions honestly in Chapter~\ref{chap:results} (Section~\ref{sec:limits}).
+  \item \textbf{Honest learning curve and inspectability.} By rebuilding the interface in vanilla HTML/CSS/JS and
+        the backend in straightforward FastAPI with direct SQL queries, every layer of the web application becomes
+        transparent. A student can open browser DevTools, inspect the actual network payloads and DOM nodes,
+        and follow the data flow directly to PostgreSQL without cognitive framework overhead.
+  \item \textbf{Pedagogical curriculum alignment.} The basic version directly aligns with the learning outcomes
+        of the course: mastering semantic HTML, responsive CSS layouts (flexbox, grid, custom properties),
+        JavaScript event handling, RESTful API design, and cookie-based session security.
+  \item \textbf{Architectural clarity and controlled scope.} Stripping away opaque build pipelines allowed the author
+        to focus deeply on core platform capabilities: rendering LaTeX mathematics with MathJax, implementing
+        PBKDF2-HMAC password hashing, validating image magic bytes for homework uploads, and deploying reliably
+        to serverless edge infrastructure.
 \end{enumerate}
 
 \subsection{Objectives}
