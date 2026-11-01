@@ -50,27 +50,43 @@ beyond the smoke test described in Chapter~\ref{chap:results}.
 \end{itemize}
 
 \subsection{Interface design}
-The interface uses a teal brand colour (\texttt{\#0F766E}) on a light, warm background,
-with a sticky navigation bar, rounded cards, and consistent spacing. A shared header links
-to practice, exams, lessons, and the library; the account control appears on the right and
-changes between ``Đăng nhập'' (login) and ``Đăng xuất (name)'' depending on session
-state. The stylesheet supports \texttt{prefers-color-scheme: dark} automatically: all
-colours are expressed as CSS custom properties, so the dark palette is a single block of
-variable overrides.
+The interface is structured around the authentic Rùa Toán design system: a deep forest green
+background (\texttt{\#0F3D2E}, \texttt{--bg}), dark panels (\texttt{\#164A38} / \texttt{\#163523}),
+and high-contrast warm parchment paper cards (\texttt{\#FFF8E7}, \texttt{--surface}) for readable
+mathematical notation. The visual identity highlights lively turtle-themed accents: vibrant lime
+(\texttt{\#B6FF3B} / \texttt{\#A3E635}, \texttt{--ooze}), warm gold (\texttt{\#FBB03B}), and
+terracotta coral (\texttt{\#FF6F59}). Typography pairs Google Font \textbf{Bungee} for playful,
+retro gaming-style headers, collection badges, and numeric stats with \textbf{Be Vietnam Pro} for
+clean, highly legible Vietnamese content and mathematical explanations.
 
-The home page is the discovery dashboard: it shows the main actions, live catalogue
-totals (collections, problems, lessons, books, documents), and the list of marked problems
-stored in the browser. The practice page uses a filter form (text, grade, topic) and 20
-results per page. The exam list provides collection pagination. A collection page keeps
-problem order and shows source attribution. The lessons page supports client-side search
-and expandable bodies. The library page combines books and documents with client-side
-search and external links. The submissions page shows uploaded thumbnails with a delete
-button.
+Every page is ported to a uniform and modular layout structure:
+\begin{itemize}
+  \item \texttt{top/header}: Sticky header containing the brand logo, navigation links
+        (\emph{Luyện tập}, \emph{Đề thi}, \emph{Bài học}, \emph{Thư viện}, \emph{Nộp bài}),
+        and session state indicator (``Đăng nhập'' or ``Đăng xuất (Tên)'').
+  \item \texttt{phead}: High-impact hero section presenting page title, subheadings, and quick action buttons.
+  \item \texttt{stats} and \texttt{mission}: Visual metric counters and orientation banners for learners.
+  \item \texttt{topics}: Pill-based interactive filter controls for grade levels and mathematical domains.
+  \item \texttt{grid/ccard}: Neomorphic, tactile cards for collections and problem statements with 3D drop-shadow borders (\texttt{3px solid var(--ink)}).
+  \item \texttt{pager}: Paginated navigation controls with ``Xem thêm'' infinite-append or index jump.
+  \item \texttt{foot}: Grounded footer with credits, license, and navigation links.
+\end{itemize}
 
-The figures below are screenshots captured from the running basic version on 1 November
-2026 (desktop width, except the last one at 390 px). They show the teal-on-light palette,
-the sticky navigation, the filter forms, the expandable lessons, and the account/submission
-pages exactly as a user sees them.
+The stylesheet automatically adapts to \texttt{prefers-color-scheme: dark} via CSS custom properties,
+with hardened input contrast, keyboard accessibility outlines (\texttt{:focus-visible}), and
+light-on-dark/dark-on-light readability overrides.
+
+The figures below are screenshots captured directly from the live public deployment on 1 November
+2026 (desktop viewport at 1440 px, and mobile viewport at 390 px). They exhibit the authentic
+green/parchment visual theme, responsive layout, interactive filter pills, and mathematical typesetting.
+Specifically, Figure~\ref{fig:home-ui} presents the primary home dashboard;
+Figure~\ref{fig:practice-ui} displays the problem practice feed;
+Figure~\ref{fig:exam-ui} showcases the curated exam collection catalogue;
+Figure~\ref{fig:lesson-ui} illustrates the searchable theory lessons;
+Figure~\ref{fig:library-ui} highlights the reference mathematics library;
+Figure~\ref{fig:submissions-ui} shows the student homework photo submission portal;
+Figure~\ref{fig:login-ui} shows the secure authentication view;
+and Figure~\ref{fig:mobile-ui} verifies full mobile responsiveness at 390~px viewport width.
 
 \begin{figure}[p]
 \centering
@@ -80,7 +96,7 @@ pages exactly as a user sees them.
 \end{figure}
 \begin{figure}[p]
 \centering
-\includegraphics[width=0.94\textwidth]{figures/ruatoan-basic-practice.png}
+\includegraphics[width=0.94\textwidth,height=0.72\textheight,keepaspectratio]{figures/ruatoan-basic-practice.png}
 \caption{Practice page at desktop width, showing topic navigation and problem cards.}
 \label{fig:practice-ui}
 \end{figure}
@@ -156,8 +172,8 @@ diacritics once per problem at load time, so search is fast per request.
 \subsection{Data design}
 The catalogue is organised as structured JSON, exactly as in the original project. The
 groups and primary fields are summarised in Table~\ref{tab:data-groups}. There are
-eleven non-sample collection files under \texttt{public/data/sources/}, seven non-sample
-lesson files under \texttt{public/data/theory/}, and top-level files \texttt{books.json}
+eleven non-sample collection files under \texttt{data/sources/}, seven non-sample
+lesson files under \texttt{data/theory/}, and top-level files \texttt{books.json}
 and \texttt{docs.json}. In this snapshot these JSON files occupy about 16 MB (after a
 19 MB duplicate copy was removed, see Section~\ref{sec:cleanup}). Files beginning with an
 underscore are samples or work-in-progress and are skipped by the loader.
@@ -237,15 +253,19 @@ these overlapping assignments.
 \end{figure}
 
 \subsection{Database design}
-PostgreSQL is used for mutable user and photo data, not for the static catalogue. The
-application creates schema \texttt{ruatoan\_basic} on first use and two tables:
+PostgreSQL is used for mutable user accounts, password reset tokens, and photo submissions,
+rather than for the static catalogue. The application creates schema \texttt{ruatoan\_basic}
+on first use and three tables:
 
 \begin{itemize}
   \item \texttt{users(id, name, email, password\_hash, created\_at)} with a unique index
         on \texttt{lower(email)} (case-insensitive uniqueness).
   \item \texttt{photos(id, user\_id, file\_name, content\_type, byte\_size, data, created\_at)}
         with an index on \texttt{(user\_id, created\_at)} for per-user history ordered by
-        time.
+        time, cascading on user deletion.
+  \item \texttt{password\_resets(id, user\_id, token\_hash, expires\_at, created\_at)}
+        with a unique index on \texttt{token\_hash} and cascade deletion on user removal,
+        enforcing single-use, 30-minute expiration for secure account recovery.
 \end{itemize}
 
 Photos are stored as \texttt{bytea} (binary) columns, so the function's temporary
@@ -284,6 +304,8 @@ POST & \texttt{/api/register} & JSON \texttt{\{name,email,password\}} & \texttt{
 POST & \texttt{/api/login} & JSON \texttt{\{email,password\}} & \texttt{\{user\}} + session cookie; 401 on bad credentials\\
 POST & \texttt{/api/logout} & session cookie & clears cookie\\
 POST & \texttt{/api/change-password} & JSON \texttt{\{old\_password,new\_password\}}, session cookie & \texttt{\{ok:true\}}; 400/401 on bad input\\
+POST & \texttt{/api/request-reset} & JSON \texttt{\{email\}} & \texttt{\{ok:true,token\}}; generates 30-min token in DB; 503 on error\\
+POST & \texttt{/api/reset-password} & JSON \texttt{\{token,new\_password\}} & \texttt{\{ok:true\}}; 400 on invalid/expired token or bad length\\
 GET & \texttt{/api/me} & session cookie (optional) & \texttt{\{user\}} or \texttt{\{user:null\}}\\
 GET & \texttt{/api/photos} & session cookie & \texttt{\{items\}} of the logged-in user's photos\\
 POST & \texttt{/api/photos} & multipart \texttt{files} (1--6), session cookie & \texttt{\{items\}}; 400/401/409/413 on validation or quota\\

@@ -5,30 +5,32 @@ The repository follows a deliberately flat layout. There is no framework, no bun
 no \texttt{node\_modules}.
 \begin{lstlisting}[language=bash,numbers=none,caption={Relevant Rùa Toán Basic project layout.}]
 ruatoan_basic/
-|-- main.py                  # re-exports backend.main.app (local entry point)
-|-- api/
-|   `-- index.py             # Vercel Python runtime entry point
+|-- main.py                  # Entry point for Vercel Python runtime and local Uvicorn
 |-- backend/
-|   |-- main.py              # FastAPI app + all endpoints (~240 lines)
-|   |-- content.py           # JSON loader with mtime-keyed cache
-|   |-- auth.py              # PBKDF2 hashing + signed cookie session
-|   `-- database.py          # psycopg connection pool + schema
+|   |-- main.py              # FastAPI app, API routes, security headers, lifespan hooks
+|   |-- content.py           # JSON catalogue loader with mtime-keyed in-memory cache
+|   |-- auth.py              # PBKDF2 hashing, HMAC session cookies, token handling
+|   `-- database.py          # psycopg connection pool + schema initialization
 |-- public/
-|   |-- index.html           # home
+|   |-- index.html           # Home page (discovery dashboard, live stats, bookmarks)
 |   |-- pages/               # practice, exams, lesson, library, login, register, submissions
-|   |-- css/style.css        # design system (364 lines)
+|   |-- css/
+|   |   |-- original.css     # Authentic Rùa Toán layout, typography, Bungee badges, card grid
+|   |   `-- style.css        # Design tokens, form styling, a11y overrides, dark mode
 |   |-- js/                  # common, home, exams, practice, lessons, library, submissions, account
-|   `-- data/                # catalogue JSON (~16 MB)
-|-- vercel.json              # rewrites, function includeFiles, maxDuration
-`-- requirements.txt         # pinned Python dependencies
+|   `-- data/                # Catalogue JSON (~16 MB: sources, theory, books, docs)
+|-- scripts/
+|   `-- smoke_test.py        # Automated end-to-end smoke test suite (all 8 flows)
+|-- vercel.json              # Function includeFiles ("data/**") and maxDuration settings
+`-- requirements.txt         # Pinned Python dependencies (fastapi, psycopg-pool, etc.)
 \end{lstlisting}
 
 \subsection{Content loading, indexing, and search}
-At runtime, \texttt{backend/content.py} reads JSON files from \texttt{public/data/}. Parsed
+At runtime, \texttt{backend/content.py} reads JSON files from \texttt{data/}. Parsed
 values are cached by file modification time: a tuple of \texttt{(path, mtime)} is the cache
 key, so a redeploy or a file change refreshes the cache automatically while repeated
-requests reuse the parsed data. The loader reads \texttt{public/data/sources/*.json}
-(excluding files whose name starts with \texttt{\_}), \texttt{public/data/theory/*.json},
+requests reuse the parsed data. The loader reads \texttt{data/sources/*.json}
+(excluding files whose name starts with \texttt{\_}), \texttt{data/theory/*.json},
 \texttt{books.json}, and \texttt{docs.json}.
 
 For search, \texttt{fold\_text} in \texttt{backend/main.py} normalises Vietnamese
@@ -93,10 +95,10 @@ external auth libraries:
   \item \texttt{hash\_password} uses \texttt{hashlib.pbkdf2\_hmac('sha256', ..., 200000)}
         with a 16-byte \texttt{os.urandom} salt and stores
         \texttt{pbkdf2\_sha256\$200000\$<salt>\$<hash>} (hex).
-  \item \texttt{verify\_password} accepts both the new prefixed format and the legacy bare
+  \item \texttt{check\_password} accepts both the new prefixed format and the legacy bare
         hex format, so old hashes keep working if the cost is raised later.
-  \item \texttt{make\_session} / \texttt{read\_session} sign a JSON payload
-        (\texttt{\{uid, exp\}}) with HMAC-SHA256 using \texttt{SESSION\_SECRET}; the
+  \item \texttt{make\_cookie} and \texttt{read\_user\_id} sign a structured body
+        (\texttt{<user\_id>:<expiry>}) with HMAC-SHA256 using \texttt{SESSION\_SECRET}; the
         cookie is \texttt{HttpOnly}, \texttt{SameSite=Lax}, \texttt{Secure} on HTTPS, and
         lives 14 days.
 \end{itemize}
@@ -106,12 +108,18 @@ external auth libraries:
 \texttt{/api/login} returns a generic ``Email hoặc mật khẩu chưa đúng'' on failure (no user
 enumeration) and sets the session cookie on success. \texttt{/api/logout} clears the cookie.
 \texttt{/api/me} returns the current user or \texttt{null}.
+\texttt{/api/change-password} verifies current credentials and updates the password hash.
+For account recovery, \texttt{/api/request-reset} generates a cryptographically random
+32-byte token and stores its SHA-256 hash in \texttt{password\_resets} with a 30-minute
+expiration interval. \texttt{/api/reset-password} verifies the single-use token against
+its database record, updates the user's password hash, and purges the reset entry upon
+successful completion.
 
 \subsection{Database operations and photo API}
 \texttt{backend/database.py} keeps a module-level \texttt{psycopg\_pool.ConnectionPool}
-(min 1, max 5) created lazily, with a fallback to a plain connection if the pool library
-is unavailable. Schema creation (\texttt{prepare\_database}) runs once in the FastAPI
-\texttt{lifespan} hook, not on every request.
+(min 1, max 5) created lazily. Strict connection pooling is enforced to prevent
+connection starvation under serverless workloads. Schema creation (\texttt{prepare\_database})
+runs once in the FastAPI \texttt{lifespan} hook, not on every request.
 
 The photo endpoints:
 
@@ -127,14 +135,19 @@ The photo endpoints:
 \end{itemize}
 
 \subsection{Deployment and environment}
-\texttt{vercel.json} contains three things: a rewrite from \texttt{/api/(.*)} to
-\texttt{/api/index}, an \texttt{includeFiles} entry that bundles \texttt{public/**} into
-the function, and \texttt{maxDuration: 30}. The entry point \texttt{api/index.py} simply
-does \texttt{from backend.main import app}; Vercel's Python runtime detects the \texttt{app}
-object and serves it. Static assets under \texttt{public/} are served directly by Vercel
-before the rewrite, so \texttt{/css/*}, \texttt{/js/*}, \texttt{/images/*}, and the HTML
-pages work without going through FastAPI. This split is what fixed the 404s that the
-first version suffered on Vercel.
+Deployment is managed on Vercel using the Python runtime. Root \texttt{main.py} serves as the
+application entry point, exposing the FastAPI ASGI \texttt{app} instance. The serverless
+configuration in \texttt{vercel.json} specifies:
+\begin{lstlisting}[numbers=none]
+{
+  "functions": {"main.py": {"includeFiles": "data/**", "maxDuration": 30}}
+}
+\end{lstlisting}
+This configuration ensures that the 16 MB JSON catalogue under \texttt{data/} is
+bundled into the serverless function execution sandbox, while static assets under \texttt{public/}
+(HTML pages, CSS files, JavaScript bundles, images) are served directly by Vercel's global edge CDN
+with zero compute overhead and no cold-start latency. Dynamic requests and \texttt{/api/*}
+endpoints are handled natively by FastAPI.
 
 Environment variables required in production: \texttt{DATABASE\_URL} and
 \texttt{SESSION\_SECRET}. \texttt{.env.local} is gitignored and never committed.
@@ -156,19 +169,31 @@ in four groups:
         request; schema creation runs once at startup; SQL uses \texttt{psycopg.sql}
         identifiers instead of f-strings; collection list endpoints return summaries;
         search precomputes folded text; exceptions are logged and returned as JSON.
-  \item \textbf{Bundle size.} A 19 MB duplicate copy of \texttt{public/data/} and a 2.5 MB
+  \item \textbf{Bundle size.} Redundant data copies under \texttt{public/} and a 2.5 MB
         backup file were removed, and two 1.2 MB screenshots were moved out of
         \texttt{public/}. The deployable data set dropped from 35 MB to 16 MB.
 \end{enumerate}
 
-\subsection{CSS redesign}
-The stylesheet was rewritten as a design system: CSS custom properties in \texttt{:root}
-for colour, radius, shadow, and transition; a \texttt{prefers-color-scheme: dark} block
-that overrides only the variables; \texttt{:focus-visible} outlines on every interactive
-element; a responsive navigation; a consistent card/button/form/photo style; and a
-heading scale using \texttt{clamp()}. No class names used by the HTML or JavaScript were
-renamed, so the redesign is purely additive in behaviour. The file grew from 3.2 KB
-(compressed onto one line) to 364 readable lines.
+\subsection{CSS architecture and interface unification}
+The styling follows a unified, two-tier architecture designed to prevent style conflicts while
+preserving the complete visual character of the original platform:
+\begin{enumerate}
+  \item \textbf{Core brand stylesheet (\texttt{original.css}):} Contains the structural layout
+        definitions for the top header, hero banners (\texttt{phead}), stat counters, topic
+        pills, collection card grids (\texttt{ccard}), pagination, and footer. It embeds the
+        retro typography rules for \textbf{Bungee} and mathematical layout styles for KaTeX/MathJax.
+  \item \textbf{Design system and component overrides (\texttt{style.css}):} Declares CSS
+        custom properties in \texttt{:root} for semantic colors, spacing scales (\texttt{--s-1} to
+        \texttt{--s-8}), border radiuses, and tactile 3D shadows. It styles components unique to
+        the basic version (authentication forms, photo upload drop zones, image thumbnail grids,
+        interactive message banners, bookmark trays) and enforces accessibility rules:
+        high-contrast input backgrounds (\texttt{\#163523}) with light text (\texttt{\#eaf6e3}),
+        prominent \texttt{:focus-visible} neon outlines (\texttt{\#b6ff3b}), and readability
+        overrides for mathematics statement cards.
+\end{enumerate}
+All HTML pages include \texttt{style.css} followed by \texttt{original.css}, ensuring
+predictable cascade order, zero visual conflicts, and full responsiveness across mobile (390 px)
+and desktop viewports.
 
 \subsection{Content preparation}
 The content directory is reused unchanged from the original project; the crawl and

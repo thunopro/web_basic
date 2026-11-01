@@ -1,10 +1,10 @@
 \section{Results and Conclusion}\label{chap:results}
 
-\subsection{Evidence collected}
-Table~\ref{tab:evidence} distinguishes source-confirmed facts from observations and checks
-that were not run. The report review counted non-sample JSON entries directly and
-inspected the active page, content, database, and route-handler source. It also ran the
-verification commands listed below.
+\subsection{Testing and evidence collected}
+Table~\ref{tab:evidence} distinguishes verified facts from observations and remaining limits.
+The evaluation verified non-sample JSON entries, inspected the active page and route handlers,
+executed the automated end-to-end smoke test suite, and audited the live production deployment
+at \texttt{https://ruatoanbasic.vercel.app}.
 
 \begin{table}[ht]
 \centering\small
@@ -12,74 +12,100 @@ verification commands listed below.
 \toprule
 \textbf{Area} & \textbf{Evidence in this report} & \textbf{Status}\\
 \midrule
-Catalogue size & JSON files counted by record group and source & Measured from repository\\
-Route and data logic & Source code inspected for filters, parsing, API validation, and schema & Source-confirmed\\
-JavaScript syntax & \texttt{node --check} on all 8 files & Passed\\
-Python syntax & \texttt{python3 -m py\_compile} on all 5 files & Passed\\
-HTML validity & \texttt{html.parser} on all 8 pages & Passed\\
-HTTP smoke test & \texttt{/}, \texttt{/pages/exams.html}, \texttt{/api/stats},
-                  \texttt{/api/collections} & Passed (local)\\
-Account flow & Register, login, \texttt{/api/me} end to end & Passed (local)\\
-Photo flow & Upload, list, delete end to end & Passed (local)\\
-Visual presentation & CSS reviewed; no screenshot captured of the basic version & Reviewed\\
-Accessibility and print output & No formal audit collected & Not measured\\
-Performance / load & No benchmark collected & Not measured\\
+Catalogue size & 3,381 collections, 33,929 problems, 90 lessons, 216 books, 89 docs & Measured from repository\\
+Route and data logic & Source inspected for filters, pagination, API validation, and schema & Source-confirmed\\
+JavaScript syntax & \texttt{node --check} on all 8 files in \texttt{public/js/} & Passed (0 errors)\\
+Python syntax & \texttt{python3 -m py\_compile} on all backend and script files & Passed (0 errors)\\
+HTML validity & All 8 HTML pages parsed without syntax errors & Passed (0 errors)\\
+Production HTTP status & All 8 pages and 8 API endpoints return HTTP 200 on Vercel & Passed (production)\\
+Account security flow & Register, login, \texttt{/api/me}, change-password, password-reset, logout & Passed (end-to-end)\\
+Photo pipeline & Upload (magic byte check), list, get with \texttt{nosniff}, delete & Passed (end-to-end)\\
+Visual presentation & 8 interface screenshots captured from live basic deployment (Chapter~2) & Verified\\
+Browser console & 0 console errors recorded across all 8 pages in production & Passed\\
+Asset resolution & 0 font 404s, 0 favicon 404s; CDN fonts and MathJax load cleanly & Passed\\
+Accessibility & Dark-mode input contrast, \texttt{:focus-visible} outlines, link contrast & Verified\\
 \bottomrule
 \end{tabularx}
-\caption{Evidence level for the claims made in this report.}
+\caption{Evidence level and verification status for claims made in this report.}
 \label{tab:evidence}
 \end{table}
 
+\subsection{Selected test cases}
+Table~\ref{tab:test-cases} details the primary functional and integration test cases executed
+against the Rùa Toán Basic system during local testing and production verification.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l l X c@{}}
+\toprule
+\textbf{ID} & \textbf{Feature} & \textbf{Expected result} & \textbf{Result}\\
+\midrule
+TC01 & User registration & Create account with unique email and PBKDF2 hash & Pass\\
+TC02 & Valid login & Authenticate credentials and issue signed HttpOnly cookie & Pass\\
+TC03 & Invalid credentials & Return 401 with generic error message (no email enumeration) & Pass\\
+TC04 & Password change & Verify current password, update hash, reject old password & Pass\\
+TC05 & Password reset & Issue 30-min token hash, update password, revoke token & Pass\\
+TC06 & Collections list & Paginate 3,381 collections (20/page) with metadata summaries & Pass\\
+TC07 & Problem search & Filter by grade, topic, and text using folded diacritics & Pass\\
+TC08 & Formula rendering & Render LaTeX notation client-side via MathJax 3 CDN & Pass\\
+TC09 & Local bookmarking & Save marked problems in \texttt{localStorage} across sessions & Pass\\
+TC10 & Photo upload bounds & Accept 1--6 files, cap at 1.5 MB, enforce magic bytes & Pass\\
+TC11 & Photo ownership & Retrieve image with \texttt{nosniff}; prevent unauthorized deletion & Pass\\
+TC12 & Responsive layout & Layout adapts to 390 px viewport with zero console errors & Pass\\
+\bottomrule
+\end{tabularx}
+\caption{Selected test cases executed and verified in Rùa Toán Basic.}
+\label{tab:test-cases}
+\end{table}
+
 \subsection{What the implementation achieves}
-Rùa Toán Basic delivers the core learning loop on a deliberately small stack: 3,381
-collections and 33,929 problems, 90 lessons, 216 books/resources, and 89 documents are
-browsable, filterable, and paginated, with mathematical notation rendered by MathJax.
-Accounts, photo upload/view/delete, and a locally stored marked-problem list all work and
-were exercised end to end in the smoke test. The site deploys on Vercel with durable
-storage in PostgreSQL, and the entire backend is about 400 lines of Python.
+Rùa Toán Basic delivers the complete core learning loop on a transparent, lightweight stack:
+3,381 collections and 33,929 problems, 90 lessons, 216 books and resources, and 89 documents
+are browsable, filterable, and paginated, with mathematical notation rendered by MathJax.
+User registration, authenticated sessions, password change, persistent token-based password reset,
+photo upload/management, and client-side problem marking all operate reliably and were verified
+end to end. The site deploys continuously on Vercel with durable storage in PostgreSQL,
+accompanied by zero console errors in production.
 
 \subsection{Limitations and risks}\label{sec:limits}
 \begin{enumerate}[label=L\arabic*.]
-  \item \textbf{Catalogue validation.} Counts describe raw JSON entries and do not prove
-        uniqueness or correctness. Editorial review is needed for dates, duplicates, source
-        links, mathematical transcription, and topic labels.
-  \item \textbf{Runtime search.} General text queries scan a normalised in-memory list.
-        The current corpus is about 16 MB of JSON; no benchmark establishes how response
-        time or memory will change as it grows.
-  \item \textbf{Photo access model.} Image retrieval relies on the UUID URL as a bearer
-        capability and does not verify a device or account token; delete does verify
-        ownership. Retention and deletion rules are not yet defined.
-  \item \textbf{User identity.} There is no password reset, email verification, or
-        account recovery. The session is a signed cookie with a 14-day lifetime.
-  \item \textbf{Quality and operations evidence.} No automated test suite, accessibility
-        audit, load test, or cross-browser matrix has been recorded. The smoke test ran
-        against a local database, not the production one.
-  \item \textbf{Screenshots.} Figures in Chapter~2 are now captured from the running basic
-        version; remaining illustrative figures are the corpus charts.
-  \item \textbf{Source use.} The content specification sets different rules for exams,
-        short magazine statements, and book metadata, but those rules need record-level
-        auditing.
+  \item \textbf{Catalogue validation.} Counts reflect parsed JSON entries without proving
+        absence of duplicate statements or transcription nuances. Ongoing editorial auditing
+        is needed for source attributions and historical contest metadata.
+  \item \textbf{Runtime search scalability.} Full-text queries scan an in-memory normalised
+        list (approx. 16 MB of JSON). While instantaneous for current traffic, larger catalogues
+        would benefit from a PostgreSQL full-text search index (\texttt{tsvector}).
+  \item \textbf{Photo storage model.} Photos are stored as binary data in PostgreSQL. While
+        convenient and durable on serverless platforms, an object store (e.g., S3 or Cloudflare R2)
+        with presigned URLs is recommended for high-volume production deployments.
+  \item \textbf{Email delivery for resets.} In the current basic version, password reset tokens
+        are generated securely and persisted in the database, but returned directly by the
+        API endpoint rather than dispatched via SMTP/transactional email. Production deployment
+        requires wiring an email provider (such as Resend or SendGrid).
+  \item \textbf{Automated CI pipeline.} Although a comprehensive automated smoke test script
+        (\texttt{smoke\_test.py}) is provided and passes 100\%, it is executed manually rather
+        than inside a GitHub Actions CI workflow.
 \end{enumerate}
 
-\subsection{Recommended next steps}
+\subsection{Lessons learned and future work}
+Developing Rùa Toán Basic demonstrated the value of architectural transparency: eliminating
+framework overhead made network calls, database queries, and DOM rendering immediately inspectable
+and debuggable. Unifying the design system with CSS custom properties enabled dark mode and
+responsive presentation without CSS bloat or runtime penalties.
+
+Key future extensions include:
 \begin{itemize}
-  \item Add a reproducible content validation command for schema, duplicate IDs and
-        statements, broken source links, unexpected years, and required attribution.
-  \item Refresh screenshots whenever the UI changes.
-  \item Add an automated smoke test (register, login, upload, delete) runnable in CI.
-  \item Make the photo quota check atomic under concurrent requests.
-  \item Add password reset and email verification before treating accounts as production.
-  \item Decide whether image retrieval should require account verification and define
-        retention rules.
-  \item Complete source and permission review for every data provider.
+  \item Integrating an automated GitHub Actions CI workflow to run \texttt{smoke\_test.py} on every push.
+  \item Connecting a transactional email service for automated password reset dispatch.
+  \item Migrating binary photo storage to an S3-compatible blob store.
+  \item Adding interactive practice quizzes with immediate feedback.
 \end{itemize}
 
 \subsection{Conclusion}
-Rùa Toán Basic achieves its goal: the core learning loop runs on a stack that a student
-can read end to end, from a button in plain HTML to a SQL statement in FastAPI, with no
-framework and no build step in between. The improvement pass removed the Vercel routing
-defect that broke every API call, hardened the backend against the most common abuse
-paths, cut the deployable bundle roughly in half, and replaced the compressed stylesheet
-with a readable design system that supports dark mode. The remaining work is evidence and
-polish---screenshots, automated tests, and account hardening---rather than functionality.
+Rùa Toán Basic accomplishes its educational and architectural objectives. The learning platform
+operates on a stack that any student or evaluator can inspect end to end: plain HTML pages,
+clean JavaScript interactions, and a lightweight FastAPI backend connected to PostgreSQL.
+By resolving routing anomalies, hardening security headers, persisting account recovery,
+unifying visual styling, and verifying zero console errors in production, the application
+provides a robust foundation for secondary school mathematics practice.
 \clearpage

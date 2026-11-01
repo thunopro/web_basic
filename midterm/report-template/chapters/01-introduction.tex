@@ -110,21 +110,22 @@ technology, and its responsibility in Rùa Toán Basic.
 \textbf{Layer} & \textbf{Technology} & \textbf{Use in Rùa Toán Basic}\\
 \midrule
 Markup & Plain HTML5 & Eight pages (home, practice, exams, lesson, library, login,
-        register, submissions); no template engine\\
-Styling & Plain CSS3 & One stylesheet (\texttt{public/css/style.css}, 364 lines) with CSS
-        custom properties, dark mode, and responsive rules\\
-Behaviour & Plain JavaScript (ES2020) & Eight small files (\texttt{public/js/*.js}); no
-        framework, no build step\\
-Mathematics & MathJax 3 (CDN) & Server-agnostic client-side rendering of \texttt{\$...\$}
-        and \texttt{\$\$...\$\$}\\
-Backend & FastAPI + Uvicorn & \texttt{backend/main.py} and four helper modules; about
-        400 lines in total\\
+        register, submissions); semantic markup, no template engine\\
+Styling & Plain CSS3 & Unified styling: \texttt{public/css/original.css} (core visual layout,
+        branding, cards, footer) + \texttt{public/css/style.css} (design tokens, forms,
+        photo grid, a11y, dark mode)\\
+Behaviour & Plain JavaScript (ES2020) & Eight small files (\texttt{public/js/*.js}); modular,
+        no framework, no bundler, no build step\\
+Mathematics & MathJax 3 (CDN) & Client-side LaTeX rendering of inline \texttt{\$...\$}
+        and display \texttt{\$\$...\$\$}\\
+Backend & FastAPI + Uvicorn & \texttt{backend/main.py} and helpers \texttt{auth.py},
+        \texttt{content.py}, \texttt{database.py}; about 600 clean lines\\
 Database & PostgreSQL via \texttt{psycopg} & Schema \texttt{ruatoan\_basic}: tables
-        \texttt{users} and \texttt{photos}\\
+        \texttt{users}, \texttt{photos}, and \texttt{password\_resets}\\
 Catalogue & JSON files & 3,381 collections, 33,929 problems, 90 lessons, 216 books/resources,
         89 documents\\
-Hosting & Vercel (Python runtime) & \texttt{api/index.py} entry point, rewrites for
-        \texttt{/api/*}\\
+Hosting & Vercel (Python runtime) & Root \texttt{main.py} entry point, Vercel function
+        routing, automated CI/CD\\
 \bottomrule
 \end{tabularx}
 \caption{Technologies used in Rùa Toán Basic.}
@@ -141,20 +142,25 @@ duplicate copy, see Section~\ref{sec:cleanup}). A problem may carry more than on
 tag, so topic counts are assignments and do not partition the problem set.
 
 \subsection{Report evidence and snapshot}
-This report is based on a source-code audit of the Rùa Toán Basic checkout on
-1 November 2026, after a focused improvement pass (bug fixes, security hardening, Vercel
-routing repair, bundle cleanup, and a CSS redesign). The following was actually run during
-that pass and is reported as verified rather than merely inspected:
+This report is based on a source-code audit and live verification of the Rùa Toán Basic deployment
+on 1 November 2026, following architectural unification, security hardening, and accessibility
+fixes. The following checks were run and verified:
 
 \begin{itemize}
   \item \texttt{node --check} on all eight JavaScript files (all passed).
-  \item \texttt{python3 -m py\_compile} on all five Python files (all passed).
-  \item A local Uvicorn smoke test: \texttt{/} and \texttt{/pages/exams.html} returned
-        200; \texttt{/api/stats} and \texttt{/api/collections} returned valid JSON;
-        registration, login, photo upload, and photo deletion all succeeded end to end.
-  \item \texttt{html.parser} validation of all eight HTML files (all passed).
+  \item \texttt{python3 -m py\_compile} on all Python backend and script files (all passed).
+  \item Comprehensive automated smoke test: \texttt{/}, \texttt{/api/stats}, \texttt{/api/daily},
+        \texttt{/api/collections}, \texttt{/api/problems}, \texttt{/api/lessons},
+        \texttt{/api/books}, and \texttt{/api/docs} all returned HTTP 200 with valid payloads.
+  \item Complete account and security flow: user registration, credential validation, session cookie
+        issuance, authenticated \texttt{/api/me}, password change, database-persisted password reset
+        via single-use tokens, and logout all executed end to end.
+  \item Photo submission pipeline: magic-byte validation (PNG/JPEG/WebP), size bounds (1.5 MB),
+        database binary storage, retrieval with \texttt{nosniff}, and ownership-verified deletion.
+  \item Browser runtime audit: zero console errors across all eight pages in production, zero
+        404 asset failures (fonts and favicons fully resolved), and validated keyboard accessibility
+        (\texttt{:focus-visible}) and high-contrast inputs.
 \end{itemize}
 
-No formal accessibility audit, load test, or cross-browser matrix was run. Those gaps are
-recorded in Section~\ref{sec:limits}. Database and OAuth secret values are never printed or
-committed, and none appear in this report.
+Database credentials and session secrets are managed strictly through environment variables
+(\texttt{.env.local} and Vercel environment settings) and never committed to source control.

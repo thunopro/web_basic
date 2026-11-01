@@ -1,47 +1,55 @@
 \section{Appendix}
 
-\subsection{Local setup}
+\subsection{Local setup and test execution}
 From a checkout of the Rùa Toán Basic repository:
 \begin{lstlisting}[language=bash,numbers=none]
+# 1. create and activate python virtual environment
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-# create a .env.local with DATABASE_URL and SESSION_SECRET
+
+# 2. configure environment variables (.env.local)
 cp .env.example .env.local
-# run the backend locally
-uvicorn backend.main:app --reload --port 8000
-# the frontend is served by FastAPI from public/, so open http://127.0.0.1:8000
+# edit .env.local: provide DATABASE_URL and SESSION_SECRET
+
+# 3. run the automated smoke test suite (all 8 flows)
+python scripts/smoke_test.py
+
+# 4. run local development server
+uvicorn main:app --reload --port 8000
+# open http://127.0.0.1:8000 in browser
 \end{lstlisting}
 The database module reads \texttt{DATABASE\_URL}; it creates schema \texttt{ruatoan\_basic}
-and the \texttt{users} and \texttt{photos} tables on first use if the configured database
-role has permission. The session requires \texttt{SESSION\_SECRET}. Secret values must be
-supplied through a local ignored environment file or the deployment platform's environment
-settings and must never be committed.
+and tables \texttt{users}, \texttt{photos}, and \texttt{password\_resets} on first startup.
+The session requires \texttt{SESSION\_SECRET}. Secrets are strictly isolated in ignored
+files and deployment environment variables.
 
 \subsection{Route inventory}
-Table~\ref{tab:routes} provides a compact route map for the pages and handlers described
-in the implementation chapters.
+Table~\ref{tab:routes} provides a compact route map for the pages and handlers implemented
+in Rùa Toán Basic.
 \begin{table}[ht]
 \centering\small
 \begin{tabularx}{\textwidth}{@{}l X@{}}
 \toprule
 \textbf{Route} & \textbf{Purpose}\\
 \midrule
-\texttt{/} & Home: catalogue totals and marked problems\\
-\texttt{/pages/practice.html} & Problem search, filters, and pagination\\
-\texttt{/pages/exams.html} & Collection list and collection detail (\texttt{?id=})\\
-\texttt{/pages/lesson.html} & Lesson search and expandable bodies\\
-\texttt{/pages/library.html} & Books and documents with search\\
-\texttt{/pages/login.html}, \texttt{/pages/register.html} & Account forms\\
-\texttt{/pages/submissions.html} & Photo upload, list, and delete\\
-\texttt{/css/*}, \texttt{/js/*}, \texttt{/images/*} & Static assets served by Vercel\\
-\texttt{/api/stats} & Catalogue totals and topic counts\\
-\texttt{/api/daily} & Today's problem\\
-\texttt{/api/collections}, \texttt{/api/collections/\{id\}} & Collection list and detail\\
-\texttt{/api/problems} & Problem search and pagination\\
-\texttt{/api/lessons}, \texttt{/api/books}, \texttt{/api/docs} & Reference material\\
-\texttt{/api/register}, \texttt{/api/login}, \texttt{/api/logout}, \texttt{/api/me} & Account session\\
-\texttt{/api/photos}, \texttt{/api/photos/\{id\}} & Photo upload/list/get/delete\\
+\texttt{/} & Home: catalogue totals, mission, and marked problem bookmarks\\
+\texttt{/pages/practice.html} & Problem search, grade/topic filters, pagination, and MathJax\\
+\texttt{/pages/exams.html} & Collection list and detail view with ordered problems\\
+\texttt{/pages/lesson.html} & Theory lessons with client search and expandable bodies\\
+\texttt{/pages/library.html} & Reference books and documents with search\\
+\texttt{/pages/login.html}, \texttt{/pages/register.html} & User authentication forms\\
+\texttt{/pages/submissions.html} & Photo upload, thumbnail gallery, and deletion\\
+\texttt{/css/*}, \texttt{/js/*}, \texttt{/images/*} & Static assets served directly by Vercel edge\\
+\texttt{/api/stats} & Live catalogue totals and topic counts\\
+\texttt{/api/daily} & Deterministic problem of the day\\
+\texttt{/api/collections}, \texttt{/api/collections/\{id\}} & Collection list and detail with pagination\\
+\texttt{/api/problems} & Problem search with folded diacritics and pagination\\
+\texttt{/api/lessons}, \texttt{/api/books}, \texttt{/api/docs} & Reference catalogue collections\\
+\texttt{/api/register}, \texttt{/api/login}, \texttt{/api/logout}, \texttt{/api/me} & Account session management\\
+\texttt{/api/change-password} & Credential update with current password validation\\
+\texttt{/api/request-reset}, \texttt{/api/reset-password} & Database-persisted single-use password reset\\
+\texttt{/api/photos}, \texttt{/api/photos/\{id\}} & Photo upload (magic bytes), list, get, and delete\\
 \bottomrule
 \end{tabularx}
 \caption{Application page and API route map.}
@@ -72,7 +80,7 @@ Figure~\ref{fig:content-pipeline} summarises how prepared content reaches the ru
 \node[stage] (source) at (0,0) {External sites and\\exam/magazine/\\book sources};
 \node[stage] (collect) at (3.7,0) {Crawlers and\\intermediate cache\\(PDFs / metadata)};
 \node[stage] (prepare) at (7.4,0) {Extract, clean,\\normalise, tag,\\retain attribution};
-\node[output] (json) at (11.1,0) {Versioned JSON\\under \texttt{public/data/}};
+\node[output] (json) at (11.1,0) {Versioned JSON\\under \texttt{data/}};
 \node[stage] (runtime) at (11.1,-2.1) {Content parser\\cache and in-memory\\lookup maps};
 \node[output] (site) at (7.4,-2.1) {Server-rendered\\pages and filters};
 \draw[arrow] (source) -- (collect);
