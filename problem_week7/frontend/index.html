@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Items</title>
+</head>
+<body>
+    <h2>Items</h2>
+    <form id="filterForm">
+        <input type="text" id="q" placeholder="Search name">
+        <input type="number" id="minPrice" placeholder="Min price">
+        <input type="number" id="maxPrice" placeholder="Max price">
+        <select id="sortBy">
+            <option value="id">id</option>
+            <option value="name">name</option>
+            <option value="price">price</option>
+        </select>
+        <select id="order">
+            <option value="asc">asc</option>
+            <option value="desc">desc</option>
+        </select>
+        <button type="submit">Filter</button>
+    </form>
+    <p id="total"></p>
+    <ul id="list"></ul>
+
+    <h3>Add item</h3>
+    <form id="createForm">
+        <input type="text" id="name" placeholder="Name" required>
+        <input type="number" id="price" placeholder="Price" step="any" required>
+        <button type="submit">Add</button>
+    </form>
+    <div id="message"></div>
+
+    <script>
+        async function loadItems() {
+            const params = new URLSearchParams();
+            const q = document.getElementById("q").value;
+            const minPrice = document.getElementById("minPrice").value;
+            const maxPrice = document.getElementById("maxPrice").value;
+            if (q) params.set("q", q);
+            if (minPrice) params.set("min_price", minPrice);
+            if (maxPrice) params.set("max_price", maxPrice);
+            params.set("sort_by", document.getElementById("sortBy").value);
+            params.set("order", document.getElementById("order").value);
+
+            const res = await fetch(`/items?${params}`);
+            const data = await res.json();
+            const list = document.getElementById("list");
+            list.innerHTML = "";
+            if (!res.ok) {
+                document.getElementById("total").innerText = "Invalid filter";
+                return;
+            }
+            document.getElementById("total").innerText = `Total: ${data.total}`;
+            for (const item of data.items) {
+                const li = document.createElement("li");
+                li.textContent = `#${item.id} ${item.name} — ${item.price}`;
+                list.appendChild(li);
+            }
+        }
+
+        document.getElementById("filterForm").addEventListener("submit", (e) => {
+            e.preventDefault();
+            loadItems();
+        });
+
+        document.getElementById("createForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const res = await fetch("/items", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: document.getElementById("name").value,
+                    price: parseFloat(document.getElementById("price").value),
+                }),
+            });
+            const data = await res.json();
+            document.getElementById("message").innerText =
+                res.ok ? `Created #${data.id}` : `Error ${res.status}: ${data.detail}`;
+            loadItems();
+        });
+
+        loadItems();
+    </script>
+</body>
+</html>

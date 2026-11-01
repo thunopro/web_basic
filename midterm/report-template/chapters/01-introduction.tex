@@ -1,0 +1,160 @@
+\section{Introduction}
+
+\subsection{Project overview}
+Rùa Toán Basic is a mathematics practice website for lower secondary students. It is the
+``basic'' version of the Rùa Toán product: the same educational goal and the same content
+catalogue, but rebuilt with a much simpler and more transparent technology stack. The
+frontend is plain HTML, CSS, and JavaScript with no framework and no build step; the
+backend is a small FastAPI application running on Vercel's Python runtime; user accounts
+and uploaded photographs are stored in PostgreSQL. The content catalogue (exam collections,
+problems, lessons, books, and documents) is still read from versioned JSON files, exactly
+as in the original project, so the two versions share one source of truth for learning
+material.
+
+The live demo of this basic version is published at
+\texttt{https://ruatoanbasic.vercel.app}. The original, more feature-rich version remains
+at \texttt{https://ruatoan.vercel.app} and is kept unchanged; the basic version does not
+replace it. Instead, the basic version exists to make every layer of the application
+inspectable and maintainable: a student or instructor can open the browser's developer
+tools and read the network requests, the DOM, and the CSS directly, and can read the entire
+backend in five short Python files.
+
+\subsection{Motivation}
+The original Rùa Toán application is built with Next.js, React, TypeScript, and Auth.js.
+That stack is powerful, but it hides a great deal of behaviour behind a framework and a
+build pipeline: server components, client components, route handlers, a content cache, and
+an OAuth session layer. For a course on web design and programming, and for a team that
+wants to understand exactly how a request travels from the browser to the database and
+back, that opacity is a genuine cost. The basic version removes it.
+
+Three concrete motivations drove the rebuild:
+
+\begin{enumerate}
+  \item \textbf{Inspectability.} Every page is a single HTML file, every interaction is a
+        short JavaScript function, and every backend route is a short FastAPI handler. A
+        reader can follow a feature from its button to its SQL statement without crossing
+        framework boundaries.
+  \item \textbf{Deployment clarity.} Vercel supports FastAPI through its Python runtime,
+        but the routing, bundling, and cold-start behaviour differ from the Node.js runtime.
+        Rebuilding against that runtime forced an explicit, documented \texttt{vercel.json}
+        and a small, auditable set of dependencies.
+  \item \textbf{A controlled scope.} The original application contains advanced features
+        (Google OAuth, a device-token photo API, a content crawl and preparation pipeline)
+        that are not all needed for the core learning loop. The basic version keeps the
+        learning loop---browse collections, read problems, study lessons, consult the
+        library, mark problems, submit photographs---and drops the rest, while recording
+        those omissions honestly in Chapter~\ref{chap:results} (Section~\ref{sec:limits}).
+\end{enumerate}
+
+\subsection{Objectives}
+The basic version was built to satisfy the following objectives:
+
+\begin{enumerate}[label=O\arabic*.]
+  \item Provide the core learning loop: browse exam collections, read individual problems
+        with mathematical notation, study lessons, and consult books and documents.
+  \item Support filtering and search: by grade, topic, collection kind, year, province, and
+        free text, with pagination.
+  \item Render mathematics correctly in the browser using MathJax, including in problem
+        statements and lessons.
+  \item Allow a learner to register, log in, and log out with an email and password, with
+        the session held in a signed cookie.
+  \item Allow a logged-in learner to upload, view, and delete photographs of written work,
+        with the images stored in PostgreSQL.
+  \item Let a learner mark problems in the browser and keep that list locally, without
+        requiring an account.
+  \item Deploy successfully on Vercel, with durable storage in PostgreSQL rather than in
+        the function's temporary filesystem.
+  \item Keep the source small, readable, and free of a build step.
+\end{enumerate}
+
+\subsection{Scope and boundaries}
+Implemented in this version:
+
+\begin{itemize}
+  \item Home page with live catalogue totals and a list of marked problems.
+  \item Practice page: text/grade/topic filters, 20 results per page, problem cards, and a
+        ``mark / unmark'' toggle.
+  \item Exam collections page: paginated list (20 per page) and a collection detail page
+        showing problems in their original order, with source attribution and a link to
+        the source.
+  \item Lessons page: client-side search over 90 lessons, expandable bodies.
+  \item Library page: books (216) and documents (89) with client-side search and external
+        links.
+  \item Account pages: registration and login with email and password; logout.
+  \item Submission page: upload up to six images (1.5 MB each) per request, view them,
+        and delete them.
+  \item Catalogue of 3,381 collections and 33,929 problems, unchanged from the original.
+\end{itemize}
+
+Explicitly \emph{not} implemented in this version, by design:
+
+\begin{itemize}
+  \item Google OAuth / social sign-in (the original has it; this version uses email and
+        password only).
+  \item Device-token based pseudonymous photo ownership (this version ties photos to the
+        logged-in account).
+  \item Cross-device synchronisation of marked problems (they stay in \texttt{localStorage}).
+  \item Automatic answer marking, a teacher administration panel, or a learning analytics
+        dashboard.
+  \item The content crawl and preparation pipeline (the JSON is reused as-is).
+\end{itemize}
+
+\subsection{Technology overview}
+The stack is deliberately small. Table~\ref{tab:technology} lists each layer, the
+technology, and its responsibility in Rùa Toán Basic.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Layer} & \textbf{Technology} & \textbf{Use in Rùa Toán Basic}\\
+\midrule
+Markup & Plain HTML5 & Eight pages (home, practice, exams, lesson, library, login,
+        register, submissions); no template engine\\
+Styling & Plain CSS3 & One stylesheet (\texttt{public/css/style.css}, 364 lines) with CSS
+        custom properties, dark mode, and responsive rules\\
+Behaviour & Plain JavaScript (ES2020) & Eight small files (\texttt{public/js/*.js}); no
+        framework, no build step\\
+Mathematics & MathJax 3 (CDN) & Server-agnostic client-side rendering of \texttt{\$...\$}
+        and \texttt{\$\$...\$\$}\\
+Backend & FastAPI + Uvicorn & \texttt{backend/main.py} and four helper modules; about
+        400 lines in total\\
+Database & PostgreSQL via \texttt{psycopg} & Schema \texttt{ruatoan\_basic}: tables
+        \texttt{users} and \texttt{photos}\\
+Catalogue & JSON files & 3,381 collections, 33,929 problems, 90 lessons, 216 books/resources,
+        89 documents\\
+Hosting & Vercel (Python runtime) & \texttt{api/index.py} entry point, rewrites for
+        \texttt{/api/*}\\
+\bottomrule
+\end{tabularx}
+\caption{Technologies used in Rùa Toán Basic.}
+\label{tab:technology}
+\end{table}
+
+\subsection{Catalogue size}
+The content catalogue is reused unchanged from the original project. The inspected JSON
+files contain 3,381 collection records and 33,929 nested problem records, together with
+90 lessons, 216 book, magazine, or resource records, and 89 document records. That is
+37,705 raw records when each collection, problem, lesson, book, and document entry is
+counted once. The JSON files occupy roughly 16 MB on disk (after removing a 19 MB
+duplicate copy, see Section~\ref{sec:cleanup}). A problem may carry more than one topic
+tag, so topic counts are assignments and do not partition the problem set.
+
+\subsection{Report evidence and snapshot}
+This report is based on a source-code audit of the Rùa Toán Basic checkout on
+1 November 2026, after a focused improvement pass (bug fixes, security hardening, Vercel
+routing repair, bundle cleanup, and a CSS redesign). The following was actually run during
+that pass and is reported as verified rather than merely inspected:
+
+\begin{itemize}
+  \item \texttt{node --check} on all eight JavaScript files (all passed).
+  \item \texttt{python3 -m py\_compile} on all five Python files (all passed).
+  \item A local Uvicorn smoke test: \texttt{/} and \texttt{/pages/exams.html} returned
+        200; \texttt{/api/stats} and \texttt{/api/collections} returned valid JSON;
+        registration, login, photo upload, and photo deletion all succeeded end to end.
+  \item \texttt{html.parser} validation of all eight HTML files (all passed).
+\end{itemize}
+
+No formal accessibility audit, load test, or cross-browser matrix was run. Those gaps are
+recorded in Section~\ref{sec:limits}. Database and OAuth secret values are never printed or
+committed, and none appear in this report.

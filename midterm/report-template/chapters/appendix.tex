@@ -1,0 +1,106 @@
+\section{Appendix}
+
+\subsection{Local setup}
+From a checkout of the Rùa Toán Basic repository:
+\begin{lstlisting}[language=bash,numbers=none]
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+# create a .env.local with DATABASE_URL and SESSION_SECRET
+cp .env.example .env.local
+# run the backend locally
+uvicorn backend.main:app --reload --port 8000
+# the frontend is served by FastAPI from public/, so open http://127.0.0.1:8000
+\end{lstlisting}
+The database module reads \texttt{DATABASE\_URL}; it creates schema \texttt{ruatoan\_basic}
+and the \texttt{users} and \texttt{photos} tables on first use if the configured database
+role has permission. The session requires \texttt{SESSION\_SECRET}. Secret values must be
+supplied through a local ignored environment file or the deployment platform's environment
+settings and must never be committed.
+
+\subsection{Route inventory}
+Table~\ref{tab:routes} provides a compact route map for the pages and handlers described
+in the implementation chapters.
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+\textbf{Route} & \textbf{Purpose}\\
+\midrule
+\texttt{/} & Home: catalogue totals and marked problems\\
+\texttt{/pages/practice.html} & Problem search, filters, and pagination\\
+\texttt{/pages/exams.html} & Collection list and collection detail (\texttt{?id=})\\
+\texttt{/pages/lesson.html} & Lesson search and expandable bodies\\
+\texttt{/pages/library.html} & Books and documents with search\\
+\texttt{/pages/login.html}, \texttt{/pages/register.html} & Account forms\\
+\texttt{/pages/submissions.html} & Photo upload, list, and delete\\
+\texttt{/css/*}, \texttt{/js/*}, \texttt{/images/*} & Static assets served by Vercel\\
+\texttt{/api/stats} & Catalogue totals and topic counts\\
+\texttt{/api/daily} & Today's problem\\
+\texttt{/api/collections}, \texttt{/api/collections/\{id\}} & Collection list and detail\\
+\texttt{/api/problems} & Problem search and pagination\\
+\texttt{/api/lessons}, \texttt{/api/books}, \texttt{/api/docs} & Reference material\\
+\texttt{/api/register}, \texttt{/api/login}, \texttt{/api/logout}, \texttt{/api/me} & Account session\\
+\texttt{/api/photos}, \texttt{/api/photos/\{id\}} & Photo upload/list/get/delete\\
+\bottomrule
+\end{tabularx}
+\caption{Application page and API route map.}
+\label{tab:routes}
+\end{table}
+
+\subsection{Content inventory snapshot}
+The audited non-sample data files contained the following records on 1 November 2026:
+\begin{itemize}
+  \item 11 source JSON files: 3,381 collections and 33,929 problem records;
+  \item 7 theory JSON files: 90 lessons;
+  \item \texttt{books.json}: 216 books, magazines, and resource records;
+  \item \texttt{docs.json}: 89 document records.
+\end{itemize}
+The topic assignment counts and collection breakdown are shown in
+Figures~\ref{fig:collection-kind-chart}--\ref{fig:topic-chart}. These are repository
+measurements and should be regenerated if the content files change.
+
+\subsection{Data pipeline diagram}
+Figure~\ref{fig:content-pipeline} summarises how prepared content reaches the runtime pages.
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[
+  stage/.style={draw=PrussianBlue,fill=PaleBlue,rounded corners=2pt,align=center,text width=2.7cm,minimum height=1.2cm},
+  output/.style={draw=FDABlue,fill=Solitude,rounded corners=2pt,align=center,text width=2.7cm,minimum height=1.2cm},
+  arrow/.style={->,thick,color=PrussianBlue}
+]
+\node[stage] (source) at (0,0) {External sites and\\exam/magazine/\\book sources};
+\node[stage] (collect) at (3.7,0) {Crawlers and\\intermediate cache\\(PDFs / metadata)};
+\node[stage] (prepare) at (7.4,0) {Extract, clean,\\normalise, tag,\\retain attribution};
+\node[output] (json) at (11.1,0) {Versioned JSON\\under \texttt{public/data/}};
+\node[stage] (runtime) at (11.1,-2.1) {Content parser\\cache and in-memory\\lookup maps};
+\node[output] (site) at (7.4,-2.1) {Server-rendered\\pages and filters};
+\draw[arrow] (source) -- (collect);
+\draw[arrow] (collect) -- (prepare);
+\draw[arrow] (prepare) -- (json);
+\draw[arrow] (json) -- (runtime);
+\draw[arrow] (runtime) -- (site);
+\end{tikzpicture}
+\caption{Content preparation and runtime consumption. The pipeline is an offline tool; it is not called during page requests. The basic version reuses its JSON output unchanged.}
+\label{fig:content-pipeline}
+\end{figure}
+
+\subsection{Glossary}
+\begin{description}
+  \item[Collection] An ordered source-aware unit such as an exam paper or topic exercise set.
+  \item[Problem] One individually addressable statement nested in a collection.
+  \item[Topic tag] A classification label; one problem may have multiple tags.
+  \item[Session cookie] A signed \texttt{HttpOnly} cookie holding the user id and expiry.
+  \item[Raw record count] Count of JSON objects by record group before claims about
+        uniqueness, correctness, or editorial review.
+\end{description}
+
+\subsection{AI assistance and academic disclosure}
+This report draft was prepared with AI assistance (Claude) after inspecting the Rùa Toán
+Basic source and data files. The assistant helped organise and describe the implementation
+and performed the bug-fix and hardening pass described in Chapter~3; it did not run a full
+test suite, an accessibility audit, or an editorial review of the mathematics catalogue.
+The original project's content pipeline also contains exam-ingestion scripts that call
+Gemini and a Claude processing lane. The group should disclose any AI tools used during
+implementation, state which content or code they assisted with, and follow the course's
+academic-integrity rules.

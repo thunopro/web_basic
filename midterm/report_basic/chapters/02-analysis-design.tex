@@ -1,0 +1,81 @@
+\section{Analysis and Design}
+\subsection{Requirements}
+The requirements below describe the implemented basic version, not every advanced feature in the original production website.
+
+\subsubsection{Functional requirements}
+\begin{enumerate}[label=FR\arabic*.]
+  \item Show the home page, navigation, and counts for collections, problems, lessons, books, and documents.
+  \item Search individual questions by text, grade, and topic; list exercise collections, search by title or province, and move through paginated results.
+  \item Open a collection and read its questions in their original order, including mathematical notation and source information when available.
+  \item List lessons and search lesson titles or summaries.
+  \item List books, magazines, and documents and follow their external links.
+  \item Register with a name, email, and password; sign in and sign out; show the signed-in name in the shared navigation.
+  \item Upload up to six JPG, PNG, or WebP files per request; view and delete photos belonging to the signed-in account.
+  \item Save a problem bookmark in browser storage and show the saved list on the home page on that same browser.
+\end{enumerate}
+
+\subsubsection{Non-functional requirements}
+\begin{itemize}
+  \item \textbf{Easy to learn:} HTML describes page content, CSS controls appearance, JavaScript handles browser events, and FastAPI defines API routes.
+  \item \textbf{Usable on different screens:} the stylesheet reduces grid columns and stacks the home hero on narrow screens. This is a source-level design goal; a formal cross-device audit has not been recorded.
+  \item \textbf{Maintainable:} each page has its own HTML and JavaScript file, and database, authentication, and content code are kept in separate Python modules.
+  \item \textbf{Safe password handling:} the application stores a salted PBKDF2 hash rather than the original password and uses a signed HttpOnly session cookie.
+  \item \textbf{Private photo access:} photo endpoints check the signed-in user ID before reading or deleting an image.
+  \item \textbf{Bounded upload:} the API accepts up to six images per request, supports JPEG, PNG, and WebP, and limits each image to 1.5 MB in application code.
+  \item \textbf{Data durability:} PostgreSQL is used for accounts and photos because files written by a serverless function are not a durable database. The deployed application therefore needs a configured PostgreSQL service and environment variables.
+  \item \textbf{Content correctness:} the JSON data includes source names and links when provided. The application does not claim that every source transcription or link has been independently checked.
+\end{itemize}
+
+\subsection{Interface design}
+The interface uses a light green background, dark text, white cards, and green action buttons. A shared navigation bar appears on the home page and the learning pages. It links to practice, exams, lessons, and the library. The account area changes depending on whether \texttt{/api/me} returns an active user.
+
+The home page introduces the site, links to the main activities, displays catalogue totals, and shows saved browser bookmarks. The practice page provides a search field, a grade selector, and a list of collection cards. The exam page displays one collection at a time and keeps its questions in source order. The lesson and library pages provide simple search fields. The login and registration pages use normal HTML forms. The submission page contains an image file input and a grid of the user's uploaded images.
+
+Mathematics text is inserted as text rather than executable HTML. MathJax is loaded by the shared JavaScript helper to display common dollar-delimited expressions. If the external math-rendering script is unavailable, the plain mathematical notation remains visible.
+
+\subsection{System architecture}
+Figure~\ref{fig:basic-architecture} shows the main request path. The browser downloads static HTML, CSS, JavaScript, and JSON files. Browser JavaScript calls the FastAPI routes under \texttt{/api}. FastAPI reads the exercise catalogue from JSON files packaged with the project. For registration, sessions, and uploaded photos it connects to PostgreSQL. The database tables belong to the separate \texttt{ruatoan\_basic} schema.
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[box/.style={draw=PrussianBlue,fill=PaleBlue,rounded corners,align=center,text width=3cm,minimum height=1cm},data/.style={draw=FDABlue,fill=Solitude,rounded corners,align=center,text width=3.2cm,minimum height=1cm},arrow/.style={->,thick}]
+\node[box] (browser) at (0,0) {Student browser\\HTML, CSS, JavaScript};
+\node[box] (api) at (4.7,0) {FastAPI\\simple API routes};
+\node[data] (json) at (9.5,1.4) {JSON files\\problems and lessons};
+\node[data] (pg) at (9.5,-1.4) {PostgreSQL\\users and photos};
+\draw[arrow,<->] (browser)--node[above]{HTTP / JSON}(api);
+\draw[arrow] (api)--(json);
+\draw[arrow,<->] (api)--(pg);
+\end{tikzpicture}
+\caption{Basic application architecture and the two data stores.}
+\label{fig:basic-architecture}
+\end{figure}
+
+\subsection{Database design}
+The project intentionally does not put the full question catalogue into PostgreSQL. Exercise and lesson content is already prepared as JSON and is read-only in this version. PostgreSQL stores data that changes while students use the application: account records and submitted images.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Table} & \textbf{Important fields} & \textbf{Purpose}\\
+\midrule
+\texttt{ruatoan\_basic.users} & \texttt{id}, \texttt{name}, \texttt{email}, \texttt{password\_hash}, \texttt{created\_at} & One row per registered account; email is unique.\\
+\texttt{ruatoan\_basic.photos} & \texttt{id}, \texttt{user\_id}, \texttt{file\_name}, \texttt{content\_type}, \texttt{image\_data}, \texttt{created\_at} & Stores image bytes and metadata. \texttt{user\_id} links each image to its owner.\\
+\bottomrule
+\end{tabularx}
+\caption{Two PostgreSQL tables created for the basic project.}
+\label{tab:basic-tables}
+\end{table}
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[entity/.style={draw=PrussianBlue,fill=PaleBlue,rounded corners,align=left,text width=4.1cm,inner sep=9pt},arrow/.style={->,thick}]
+\node[entity] (user) at (0,0) {\textbf{users}\\id (PK)\\name\\email (unique)\\password\_hash\\created\_at};
+\node[entity] (photo) at (7,0) {\textbf{photos}\\id (PK)\\user\_id (FK)\\file\_name\\content\_type\\image\_data (BYTEA)\\created\_at};
+\draw[arrow] (user)--node[above]{one user owns many photos}(photo);
+\end{tikzpicture}
+\caption{Simple relationship between a user and uploaded images.}
+\label{fig:basic-schema}
+\end{figure}
+
+The image is stored as PostgreSQL \texttt{BYTEA}, a binary field. This keeps the first version easy to understand and means photo access can be restricted using the account relationship. For a large public service, object storage is often more suitable for many large image files; that scaling change is outside this beginner project.

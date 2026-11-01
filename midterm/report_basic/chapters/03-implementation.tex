@@ -1,0 +1,60 @@
+\section{Implementation}
+\subsection{Project structure}
+The folders follow the basic learning path: first HTML pages, then CSS and JavaScript, then a small Python backend.
+\begin{lstlisting}[language=bash,numbers=none,caption={Rùa Toán Basic folder layout.}]
+ruatoan_basic/
+|-- main.py                 # FastAPI entry point
+|-- backend/
+|   |-- main.py             # API paths and page responses
+|   |-- database.py         # PostgreSQL connection and tables
+|   |-- auth.py             # password hash and signed cookie
+|   `-- content.py          # read JSON files
+|-- public/
+|   |-- index.html          # home page
+|   |-- pages/              # practice, exams, lessons, account pages
+|   |-- css/style.css       # website appearance
+|   |-- js/                 # browser actions, one file per page
+|   |-- images/             # website images
+|   `-- data/               # exercise, lesson, book, and document JSON
+|-- requirements.txt        # Python packages
+|-- .env.example            # names of required environment values
+`-- vercel.json             # Vercel function file settings
+\end{lstlisting}
+
+\subsection{Browser to backend request}
+A page starts as HTML. The browser downloads its linked CSS and JavaScript files. JavaScript listens for events such as a form submission or button click. It then calls a FastAPI URL with \texttt{fetch()}, reads a JSON response, and updates the page. For example, the practice page sends the search text and selected grade to \texttt{GET /api/collections}; FastAPI filters the list and returns one page of results.
+
+This separation has a small number of concepts: HTML elements, CSS selectors, JavaScript event handlers, an HTTP request, a Python function, and a JSON response. No frontend framework is required.
+
+\subsection{Reading the content files}
+\texttt{backend/content.py} loads the prepared JSON files from \texttt{public/data}. It combines collection files, keeps the collection copy with more questions when an ID repeats, and removes a question ID already shown in an earlier collection. Lessons are combined from their JSON files. Books and documents are read from their own files. A simple in-memory cache avoids parsing every JSON file for every API request in one running process.
+
+The catalogue is read-only. The API returns a maximum of 50 collections per list request. Search in this basic version checks collection title and province. Problem search folds Vietnamese accents and can filter by topic and grade. Collection search has fewer filters than the original application.
+
+\subsection{Account and session flow}
+The registration page sends a name, email, and password to \texttt{POST /api/register}. The backend requires a password of at least eight characters, creates a random salt, and uses Python's PBKDF2-HMAC-SHA256 to produce the value saved in \texttt{password\_hash}. It inserts the account into PostgreSQL, then issues a signed cookie. Login reads the account by email and compares a new password hash with the stored hash using a constant-time comparison. Logout expires the cookie. The browser asks \texttt{GET /api/me} to decide whether to show the signed-in name or a login link.
+
+The cookie contains an account ID and expiry time with an HMAC signature. The browser cannot read the cookie through JavaScript because the cookie is marked HttpOnly. The cookie is secure on HTTPS and uses SameSite=Lax. This is a compact teaching example. A production system should also consider password reset, email verification, rate limiting, stronger session rotation, and security review.
+
+\subsection{Photo submission flow}
+The submission page sends selected files to \texttt{POST /api/photos} using \texttt{FormData}. The API requires a signed-in user, accepts up to six JPEG, PNG, or WebP files, and limits each file to 1.5 MB. The file bytes are inserted into the PostgreSQL \texttt{BYTEA} column. Listing, viewing, and deletion queries include the current user ID, so one account cannot request another account's image by guessing a photo ID. Images are not compressed in the browser in this basic version.
+
+\subsection{Bookmarks and page behaviour}
+Problem bookmarks are saved in browser \texttt{localStorage}. This makes the example easy to follow and avoids a new database table, but bookmarks belong to one browser and do not follow the user to another device. The practice list has a grade selector, title/province search, and a next-page button. Collection view preserves problem order. Lessons can be searched and expanded. Books and documents can be filtered by text and opened at their recorded external URL.
+
+\subsection{Running locally}
+The README gives these beginner commands after Python and PostgreSQL settings have been prepared:
+\begin{lstlisting}[language=bash,numbers=none,caption={Install and run on a development computer.}]
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+# Add DATABASE_URL and SESSION_SECRET to .env.local
+set -a
+source .env.local
+set +a
+uvicorn main:app --reload
+\end{lstlisting}
+Then open \texttt{http://127.0.0.1:8000}. The first registration creates the schema and the two tables. The database URL and session secret are environment configuration and must not be included in source control.
+
+\subsection{Deployment design}
+The project includes a root \texttt{main.py} that exports the FastAPI application for Vercel. The deployed service requires \texttt{DATABASE\_URL} and \texttt{SESSION\_SECRET} to be configured in the Vercel project settings. The JSON content is packaged with the app; account and photo persistence is delegated to PostgreSQL. Vercel documents support for FastAPI and notes that function filesystems are read-only apart from temporary scratch space, so a local file is not a persistent account database \cite{vercelFastapi,vercelFilesystem}.

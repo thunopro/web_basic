@@ -1,0 +1,322 @@
+\section{Analysis and Design}
+
+\subsection{Requirements}
+The requirements below describe visible behaviour and quality goals represented in the
+inspected source. They are not claims that every case has passed a formal acceptance test
+beyond the smoke test described in Chapter~\ref{chap:results}.
+
+\subsubsection{Functional requirements}
+\begin{enumerate}[label=FR\arabic*.]
+  \item Browse exam collections with pagination (20 per page) and open a collection to
+        read its problems in original order, with source attribution and a link to the
+        source.
+  \item Browse individual problems by free text, grade, and topic; open a problem with its
+        collection context.
+  \item Read problem and lesson statements containing inline or display mathematical
+        notation rendered with MathJax.
+  \item Browse the five topic areas' lessons (90), and the library of books (216) and
+        documents (89), with client-side search and external links.
+  \item Register, log in, and log out with an email and password; keep the session in a
+        signed cookie.
+  \item Upload up to six photographs (1.5 MB each) per request, view them, and delete
+        them, for a logged-in user.
+  \item Keep a compact list of marked problems in browser storage, independently of the
+        account and the database.
+  \item Show live catalogue totals on the home page.
+\end{enumerate}
+
+\subsubsection{Non-functional requirements and constraints}
+\begin{itemize}
+  \item \textbf{Responsive presentation:} pages must remain readable on narrow and wide
+        screens. The CSS contains responsive layout rules; a formal device test has not
+        been recorded.
+  \item \textbf{Readable mathematics:} problem text is rendered with MathJax. No print
+        benchmark was collected (the basic version has no dedicated print view).
+  \item \textbf{Source transparency:} collection pages show source names and link to
+        source pages when URLs are available.
+  \item \textbf{Keyboard and assistive-technology support:} the layout includes visible
+        keyboard focus (\texttt{:focus-visible}), labelled navigation and controls, and
+        \texttt{aria-label} on inputs without a visible label. These are implementation
+        details, not evidence of a completed accessibility audit.
+  \item \textbf{Bounded image input:} the API accepts PNG/JPEG/WebP only, no more than
+        six files per request, 1.5 MB per file, and 50 images per account in total.
+  \item \textbf{Account-scoped photo ownership:} photos belong to the logged-in user.
+        Clearing the browser does not lose them; they are stored in PostgreSQL.
+  \item \textbf{Secret handling:} database and session secrets are supplied through
+        environment variables and must not be committed or printed in the report.
+  \item \textbf{Content quality:} records preserve source context, but the project has no
+        measured editorial audit that proves every transcription, link, tag, or year is
+        correct.
+\end{itemize}
+
+\subsection{Interface design}
+The interface uses a teal brand colour (\texttt{\#0F766E}) on a light, warm background,
+with a sticky navigation bar, rounded cards, and consistent spacing. A shared header links
+to practice, exams, lessons, and the library; the account control appears on the right and
+changes between ``Đăng nhập'' (login) and ``Đăng xuất (name)'' depending on session
+state. The stylesheet supports \texttt{prefers-color-scheme: dark} automatically: all
+colours are expressed as CSS custom properties, so the dark palette is a single block of
+variable overrides.
+
+The home page is the discovery dashboard: it shows the main actions, live catalogue
+totals (collections, problems, lessons, books, documents), and the list of marked problems
+stored in the browser. The practice page uses a filter form (text, grade, topic) and 20
+results per page. The exam list provides collection pagination. A collection page keeps
+problem order and shows source attribution. The lessons page supports client-side search
+and expandable bodies. The library page combines books and documents with client-side
+search and external links. The submissions page shows uploaded thumbnails with a delete
+button.
+
+The figures below are screenshots captured from the running basic version on 1 November
+2026 (desktop width, except the last one at 390 px). They show the teal-on-light palette,
+the sticky navigation, the filter forms, the expandable lessons, and the account/submission
+pages exactly as a user sees them.
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.94\textwidth,height=0.72\textheight,keepaspectratio]{figures/ruatoan-basic-home.png}
+\caption{Public demo home page: primary actions, catalogue totals, and recent collections.}
+\label{fig:home-ui}
+\end{figure}
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.94\textwidth]{figures/ruatoan-basic-practice.png}
+\caption{Practice page at desktop width, showing topic navigation and problem cards.}
+\label{fig:practice-ui}
+\end{figure}
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.94\textwidth,height=0.72\textheight,keepaspectratio]{figures/ruatoan-basic-exams.png}
+\caption{Exam collection page with ordered statements and source attribution.}
+\label{fig:exam-ui}
+\end{figure}
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.94\textwidth,height=0.72\textheight,keepaspectratio]{figures/ruatoan-basic-lesson.png}
+\caption{Lesson page with client-side search and expandable bodies.}
+\label{fig:lesson-ui}
+\end{figure}
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.94\textwidth,height=0.72\textheight,keepaspectratio]{figures/ruatoan-basic-library.png}
+\caption{Library page combining books and documents with client-side search.}
+\label{fig:library-ui}
+\end{figure}
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.94\textwidth,height=0.72\textheight,keepaspectratio]{figures/ruatoan-basic-submissions.png}
+\caption{Submission page for uploading, viewing, and deleting photographs.}
+\label{fig:submissions-ui}
+\end{figure}
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.76\textwidth,height=0.68\textheight,keepaspectratio]{figures/ruatoan-basic-login.png}
+\caption{Login page with email and password.}
+\label{fig:login-ui}
+\end{figure}
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.52\textwidth,height=0.65\textheight,keepaspectratio]{figures/ruatoan-basic-home-mobile.png}
+\caption{Home page captured at a 390-pixel viewport width.}
+\label{fig:mobile-ui}
+\end{figure}
+\clearpage
+
+\subsection{System architecture}
+Figure~\ref{fig:architecture} summarises the system boundary of the basic version. The
+browser requests static files and JSON-backed pages from Vercel; Vercel serves the static
+assets from \texttt{public/} and routes \texttt{/api/*} to the FastAPI function. FastAPI
+reads the catalogue JSON from disk (cached in memory per process) and the user data from
+PostgreSQL. There is no OAuth provider and no build step.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[
+  box/.style={draw=PrussianBlue,fill=PaleBlue,rounded corners=2pt,align=center,text width=3.1cm,minimum height=1.15cm},
+  data/.style={draw=FDABlue,fill=Solitude,rounded corners=2pt,align=center,text width=3.15cm,minimum height=1.1cm},
+  arrow/.style={->,thick,color=PrussianBlue}
+]
+\node[box] (browser) at (0,0) {\textbf{Student browser}\\HTML/CSS/JS\\MathJax; localStorage};
+\node[box] (vercel) at (5,0) {\textbf{Vercel}\\Static files from \texttt{public/}\\FastAPI function for \texttt{/api/*}};
+\node[data] (json) at (10.3,1.8) {\textbf{Catalogue JSON}\\Collections and problems\\Lessons, books, documents};
+\node[data] (pg) at (10.3,-1.5) {\textbf{PostgreSQL}\\\texttt{ruatoan\_basic.users}\\ \texttt{ruatoan\_basic.photos}};
+\draw[arrow,<->] (browser) -- (vercel);
+\draw[arrow] (vercel) -- (json);
+\draw[arrow,<->] (vercel) -- (pg);
+\end{tikzpicture}
+\caption{Logical system architecture of Rùa Toán Basic. Content, account data, and photos use separate paths.}
+\label{fig:architecture}
+\end{figure}
+
+The FastAPI application declares no revalidation interval (it is not a cached framework
+page); instead, the catalogue is held in an in-memory cache keyed by file modification
+time, so a redeploy refreshes it automatically. The content module also folds Vietnamese
+diacritics once per problem at load time, so search is fast per request.
+
+\subsection{Data design}
+The catalogue is organised as structured JSON, exactly as in the original project. The
+groups and primary fields are summarised in Table~\ref{tab:data-groups}. There are
+eleven non-sample collection files under \texttt{public/data/sources/}, seven non-sample
+lesson files under \texttt{public/data/theory/}, and top-level files \texttt{books.json}
+and \texttt{docs.json}. In this snapshot these JSON files occupy about 16 MB (after a
+19 MB duplicate copy was removed, see Section~\ref{sec:cleanup}). Files beginning with an
+underscore are samples or work-in-progress and are skipped by the loader.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l r X@{}}
+\toprule
+\textbf{Record group} & \textbf{Count} & \textbf{Primary fields / use}\\
+\midrule
+Collections & 3,381 & ID, kind, title, grade, optional year/province, source name/URL, ordered problems\\
+Problems & 33,929 & ID, label, statement text, topic tags; nested in a collection\\
+Lessons & 90 & ID, topic, title, summary, body, optional examples\\
+Books and resources & 216 & ID, title, author/publisher, grades/topics, description, URL, kind and source\\
+Documents & 89 & ID, topic, title, author, grade/page metadata, description and source links\\
+\bottomrule
+\end{tabularx}
+\caption{Catalogue groups counted directly from non-sample JSON records.}
+\label{tab:data-groups}
+\end{table}
+
+Figure~\ref{fig:data-model} shows how the catalogue, browser state, photo rows, and user
+rows relate. The main nested relationship is \emph{Collection contains an ordered array
+of Problems}. Collection metadata supports exam filtering and attribution. A problem
+carries its own stable identifier and display label, statement, and one or more topic
+tags. Books, lessons, and documents are separate runtime collections. The data model is
+intentionally source-aware: the collection retains source URL and source name so individual
+problem pages can display the origin.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[
+  entity/.style={draw=PrussianBlue,fill=Solitude,rounded corners=2pt,align=left,text width=3.3cm,inner sep=6pt},
+  arrow/.style={->,thick,color=PrussianBlue}
+]
+\node[entity] (collection) at (0,0) {\textbf{Collection JSON}\\ID, kind, title, grade\\year, province\\source name and URL};
+\node[entity] (problem) at (4.8,0) {\textbf{Nested Problem JSON}\\ID, label, statement\\topic tags\\array order preserved};
+\node[entity] (photo) at (9.6,0) {\textbf{PostgreSQL Photo row}\\UUID, user\_id\\file name, MIME, bytes\\created\_at};
+\node[entity] (ref) at (0,-3.1) {\textbf{Reference JSON groups}\\Lessons (90)\\Books/resources (216)\\Documents (89)};
+\node[entity] (device) at (4.8,-3.1) {\textbf{Browser local storage}\\Marked-problem list\\Not an account profile};
+\node[entity] (user) at (9.6,-3.1) {\textbf{PostgreSQL User row}\\id, name\\email (unique, lower)\\password hash};
+\draw[arrow] (collection) -- (problem);
+\draw[arrow] (user) -- (photo);
+\end{tikzpicture}
+\caption{Catalogue and user-related records by storage location. Marked problems stay in the browser.}
+\label{fig:data-model}
+\end{figure}
+
+The corpus spans five collection kinds: 1,195 HSG, 501 grade-10 specialised entrance, 733
+Olympiad, 844 magazine, and 108 topic collections. The current grade metadata contains
+237 grade-6, 342 grade-7, 411 grade-8, 1,786 grade-9, and 605 grade-10 collections. The
+recorded years range from 1935 to 2027. The collection-kind and grade distributions
+appear in Figures~\ref{fig:collection-kind-chart} and \ref{fig:collection-grade-chart}.
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/collection-types.pdf}
+\caption{Collection counts by source kind in the inspected JSON corpus.}
+\label{fig:collection-kind-chart}
+\end{figure}
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/collection-grades.pdf}
+\caption{Collection counts by target grade; grade 10 denotes specialised entrance material.}
+\label{fig:collection-grade-chart}
+\end{figure}
+
+Topic tags are multi-valued. The current records contain 7,643 number-theory assignments,
+12,677 algebra assignments, 3,926 inequality assignments, 10,442 geometry assignments,
+and 4,098 combinatorics assignments. Since a problem can carry more than one tag, these
+values are not a partition of the 33,929 problems. Figure~\ref{fig:topic-chart} visualises
+these overlapping assignments.
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/problem-topic-tags.pdf}
+\caption{Topic-tag assignment counts. Problems with multiple tags contribute to multiple bars.}
+\label{fig:topic-chart}
+\end{figure}
+
+\subsection{Database design}
+PostgreSQL is used for mutable user and photo data, not for the static catalogue. The
+application creates schema \texttt{ruatoan\_basic} on first use and two tables:
+
+\begin{itemize}
+  \item \texttt{users(id, name, email, password\_hash, created\_at)} with a unique index
+        on \texttt{lower(email)} (case-insensitive uniqueness).
+  \item \texttt{photos(id, user\_id, file\_name, content\_type, byte\_size, data, created\_at)}
+        with an index on \texttt{(user\_id, created\_at)} for per-user history ordered by
+        time.
+\end{itemize}
+
+Photos are stored as \texttt{bytea} (binary) columns, so the function's temporary
+filesystem is never used for durable data---a requirement on Vercel, where the filesystem
+of a serverless function is ephemeral. There is no foreign key from \texttt{photos} to the
+JSON catalogue, because problems are not rows in PostgreSQL. The API does not verify that
+an uploaded problem ID exists in the catalogue; it stores whatever the client sends as
+metadata.
+
+Passwords are hashed with PBKDF2-HMAC-SHA256 (200,000 iterations) using a 16-byte random
+salt, and stored in the format \texttt{pbkdf2\_sha256\$iterations\$salt\$hash} so the cost
+can be raised later without invalidating existing hashes. The session is a signed cookie
+(HMAC over a JSON payload containing the user id and an expiry), \texttt{HttpOnly},
+\texttt{SameSite=Lax}, and \texttt{Secure} on HTTPS.
+
+\subsection{API design}
+The API is a small read/write surface. Table~\ref{tab:api} lists every endpoint, its
+request shape, and its successful and error behaviour as confirmed by the source and by the
+smoke test.
+
+\begin{table}[ht]
+\centering\footnotesize
+\begin{tabularx}{\textwidth}{@{}l l X X@{}}
+\toprule
+\textbf{Method} & \textbf{Path} & \textbf{Request} & \textbf{Successful result / explicit errors}\\
+\midrule
+GET & \texttt{/api/stats} & none & \texttt{\{collections,problems,lessons,books,docs,topics\}}\\
+GET & \texttt{/api/daily} & none & \texttt{\{problem,collection\}} for today's problem\\
+GET & \texttt{/api/collections} & \texttt{?page,limit,grade,kind,year,province,search} & \texttt{\{total,page,items\}} (summary, no problem arrays)\\
+GET & \texttt{/api/collections/\{id\}} & \texttt{?page,per} & collection metadata + one page of problems; 404 if missing\\
+GET & \texttt{/api/problems} & \texttt{?page,limit,search,grade,topic} & \texttt{\{total,page,items\}}\\
+GET & \texttt{/api/lessons} & \texttt{?search} & \texttt{\{items\}}\\
+GET & \texttt{/api/books} & \texttt{?search} & \texttt{\{items\}}\\
+GET & \texttt{/api/docs} & \texttt{?search} & \texttt{\{items\}}\\
+POST & \texttt{/api/register} & JSON \texttt{\{name,email,password\}} & \texttt{\{user\}}; 400/409 on validation or duplicate email\\
+POST & \texttt{/api/login} & JSON \texttt{\{email,password\}} & \texttt{\{user\}} + session cookie; 401 on bad credentials\\
+POST & \texttt{/api/logout} & session cookie & clears cookie\\
+POST & \texttt{/api/change-password} & JSON \texttt{\{old\_password,new\_password\}}, session cookie & \texttt{\{ok:true\}}; 400/401 on bad input\\
+GET & \texttt{/api/me} & session cookie (optional) & \texttt{\{user\}} or \texttt{\{user:null\}}\\
+GET & \texttt{/api/photos} & session cookie & \texttt{\{items\}} of the logged-in user's photos\\
+POST & \texttt{/api/photos} & multipart \texttt{files} (1--6), session cookie & \texttt{\{items\}}; 400/401/409/413 on validation or quota\\
+GET & \texttt{/api/photos/\{id\}} & session cookie & image bytes with \texttt{nosniff}; 404 if missing\\
+DELETE & \texttt{/api/photos/\{id\}} & session cookie & \texttt{\{ok:true\}}; 404 if not owned\\
+\bottomrule
+\end{tabularx}
+\caption{Implemented route responsibilities and the response behaviour confirmed by source and smoke test.}
+\label{tab:api}
+\end{table}
+
+For photo upload, the browser sends the raw selected files (no client-side compression in
+this version; the original project compressed them). The server validates the count
+(1--6), the per-file size (1.5 MB), and the magic bytes (PNG/JPEG/WebP) rather than
+trusting the declared MIME type. It enforces a per-account cap of 50 images, then inserts
+all validated files in one transaction. Accepted bytes are stored as \texttt{bytea}. The
+image endpoint sets \texttt{X-Content-Type-Options: nosniff} and returns the stored bytes.
+
+\subsection{Security design (added in the improvement pass)}\label{sec:security}
+The original backend had no security headers, no input-size bound on passwords, no
+rate limiting, and trusted the client-declared MIME type. The improvement pass added:
+
+\begin{itemize}
+  \item Security headers on every response: \texttt{X-Content-Type-Options: nosniff},
+        \texttt{X-Frame-Options: DENY}, \texttt{Referrer-Policy: strict-origin-when-cross-origin},
+        and a Content-Security-Policy that allows the MathJax CDN but nothing else.
+  \item A password length bound of 8--128 characters (the upper bound prevents a
+        CPU-exhaustion denial of service through PBKDF2).
+  \item Magic-byte sniffing for uploads instead of trusting \texttt{Content-Type}.
+  \item A per-account photo quota of 50 images.
+  \item Case-insensitive unique email index.
+  \item \texttt{Secure} cookie flag on HTTPS, and a consistent error shape (JSON) for all
+        failures via a global exception handler.
+\end{itemize}
+
+These are source-level hardening measures; they were not subjected to a penetration test.

@@ -1,0 +1,22 @@
+\section{Results and Conclusion}
+\subsection{Implemented result}
+Rùa Toán Basic provides a separate beginner-oriented implementation with these connected parts:
+\begin{itemize}
+  \item A plain HTML home page and separate HTML pages for practice, exam collections, lessons, library, sign-in, registration, and submissions.
+  \item One responsive CSS file and small page-specific JavaScript files.
+  \item FastAPI endpoints for catalogue data, account actions, current-session lookup, and account-owned photo actions.
+  \item JSON content for questions, lessons, books, and documents; PostgreSQL tables for user accounts and submitted photos.
+  \item A README that shows the folder layout, environment settings, local run command, and API paths.
+\end{itemize}
+The catalogue scale is useful for demonstrating that a read-only set of thousands of collections can remain as prepared JSON while the smaller changing user records are stored in PostgreSQL. It does not establish that JSON is faster than PostgreSQL for every workload; a performance comparison would require a defined dataset, equivalent queries, and measured tests.
+
+\subsection{Verification status and limitations}
+This report documents source-level behaviour. A production smoke check confirmed the home page, CSS/JavaScript files, content APIs, and reported catalogue counts. A temporary account was registered, signed in, signed out, and removed. A small image was uploaded to PostgreSQL, retrieved byte-for-byte, and deleted. These checks cover basic request paths only; no load test or performance benchmark is claimed.
+
+The current basic project is intended to cover the same main learning activities, but it is not a feature-for-feature replacement of the current Rùa Toán website. It uses email/password rather than Google sign-in; it has fewer filters; bookmarks are browser-local; image data is stored directly in PostgreSQL; and it omits the original site's automated content crawling, advanced topic relationships, and some presentation details. These limits keep the code shorter and easier for a beginner to trace.
+
+\subsection{Conclusion}
+The project demonstrates how a familiar website can be built with foundational web technologies. HTML defines each page, CSS styles it, JavaScript sends requests and handles interaction, FastAPI provides server routes, JSON supplies read-only learning content, and PostgreSQL stores account and image records that must persist. Keeping these jobs in separate beginner-sized files makes the data flow visible and provides a starting point for later improvements.
+
+\subsection{Future improvements}
+Possible next steps are adding topic and year filters, syncing bookmarks to an account, resizing images in the browser, storing large photos in object storage, adding password reset and email verification, and adding a small performance measurement section. Each change can be introduced as one page or one API route at a time.

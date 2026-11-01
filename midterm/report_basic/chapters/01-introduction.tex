@@ -1,0 +1,22 @@
+\section{Introduction}
+\subsection{Project background}
+Rùa Toán is a website for students who want to practise mathematics, browse exam collections, review theory, and find learning materials. The existing production project uses a modern TypeScript and React-based stack. Rùa Toán Basic is a separate learning version of the same idea. It uses plain HTML pages, CSS stylesheets, browser JavaScript, and a small FastAPI backend so that a junior developer can follow the code one file at a time.
+
+The basic project reuses prepared learning content from the current Rùa Toán repository. At the time the data snapshot was copied, it contained 3,381 unique collections with 33,929 unique problem records, 90 lessons, 216 books or magazines, and 89 documents. The problem records are grouped inside their collections. These figures describe the copied data files; they do not mean each item has been manually reviewed in this project.
+
+\subsection{Problem statement}
+A student needs one place to find practice questions, open full collections, review lessons, and access learning material. The site should work on a phone or computer and should let a student create an account, sign in, sign out, and keep uploaded photographs of written work. The code should be understandable to someone who has first studied basic HTML, CSS, JavaScript, HTTP requests, and simple Python APIs.
+
+\subsection{Objectives and scope}
+The project has four practical objectives:
+\begin{enumerate}
+  \item Present a clear home page and navigation between learning pages.
+  \item Read the prepared mathematics catalogue and provide search, grade selection, pagination, and collection detail pages.
+  \item Demonstrate account registration, password-based login, logout, and account-owned image storage.
+  \item Explain the data flow and project structure with short code modules and simple commands.
+\end{enumerate}
+
+The catalogue is read-only in this version. Students do not create or edit the canonical question bank. A question can be bookmarked in the current browser using \texttt{localStorage}; this browser bookmark is not a cloud-synced account feature. Uploaded photos and account records are stored in PostgreSQL. The basic version uses email and password rather than Google OAuth.
+
+\subsection{Intended users}
+The main users are lower-secondary students preparing for mathematics tests, teachers or tutors who want to browse collections, and junior developers learning how a browser page communicates with a Python API and a database.

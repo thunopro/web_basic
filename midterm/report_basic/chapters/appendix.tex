@@ -1,0 +1,28 @@
+\section{Appendix: API and Data Flow}
+\subsection{Main API routes}
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Method} & \textbf{Path} & \textbf{Purpose}\\
+\midrule
+GET & \texttt{/api/stats} & Return counts for the content catalogue.\\
+GET & \texttt{/api/collections} & Search and paginate collection records.\\
+GET & \texttt{/api/collections/\{id\}} & Return one collection with ordered problems.\\
+GET & \texttt{/api/problems} & Search individual questions by text, grade, topic, and page.\\
+GET & \texttt{/api/lessons} & Return or search lesson records.\\
+GET & \texttt{/api/books}, \texttt{/api/docs} & Return or search learning materials.\\
+POST & \texttt{/api/register}, \texttt{/api/login} & Create account or start a session.\\
+POST & \texttt{/api/logout}; GET \texttt{/api/me} & End the session or read the signed-in account.\\
+GET/POST & \texttt{/api/photos} & List photos or upload new photos for the current account.\\
+GET/DELETE & \texttt{/api/photos/\{id\}} & View or delete an account-owned image.\\
+\bottomrule
+\end{tabularx}
+\caption{Main API routes in the basic project.}
+\end{table}
+
+\subsection{Simple request example}
+When a student searches for a collection, the browser reads the search text and grade selection. It makes a URL such as \texttt{/api/collections?search=Ha+Noi\&grade=9\&page=1}. FastAPI reads these query parameters, selects matching JSON records, and returns JSON. The browser then creates collection cards from the returned records. In the photo flow, the browser sends file bytes instead of JSON text; the API checks the session and stores the bytes in PostgreSQL.
+
+\subsection{Environment configuration}
+The application needs two private environment values: \texttt{DATABASE\_URL}, the connection string from the PostgreSQL provider, and \texttt{SESSION\_SECRET}, a long random signing value. A sample names-only file is provided as \texttt{.env.example}. The real local \texttt{.env.local} file is ignored by Git. Neither private value should be copied into this report, screenshots, or public source control.

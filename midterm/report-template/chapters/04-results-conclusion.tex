@@ -1,0 +1,85 @@
+\section{Results and Conclusion}\label{chap:results}
+
+\subsection{Evidence collected}
+Table~\ref{tab:evidence} distinguishes source-confirmed facts from observations and checks
+that were not run. The report review counted non-sample JSON entries directly and
+inspected the active page, content, database, and route-handler source. It also ran the
+verification commands listed below.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l X l@{}}
+\toprule
+\textbf{Area} & \textbf{Evidence in this report} & \textbf{Status}\\
+\midrule
+Catalogue size & JSON files counted by record group and source & Measured from repository\\
+Route and data logic & Source code inspected for filters, parsing, API validation, and schema & Source-confirmed\\
+JavaScript syntax & \texttt{node --check} on all 8 files & Passed\\
+Python syntax & \texttt{python3 -m py\_compile} on all 5 files & Passed\\
+HTML validity & \texttt{html.parser} on all 8 pages & Passed\\
+HTTP smoke test & \texttt{/}, \texttt{/pages/exams.html}, \texttt{/api/stats},
+                  \texttt{/api/collections} & Passed (local)\\
+Account flow & Register, login, \texttt{/api/me} end to end & Passed (local)\\
+Photo flow & Upload, list, delete end to end & Passed (local)\\
+Visual presentation & CSS reviewed; no screenshot captured of the basic version & Reviewed\\
+Accessibility and print output & No formal audit collected & Not measured\\
+Performance / load & No benchmark collected & Not measured\\
+\bottomrule
+\end{tabularx}
+\caption{Evidence level for the claims made in this report.}
+\label{tab:evidence}
+\end{table}
+
+\subsection{What the implementation achieves}
+Rùa Toán Basic delivers the core learning loop on a deliberately small stack: 3,381
+collections and 33,929 problems, 90 lessons, 216 books/resources, and 89 documents are
+browsable, filterable, and paginated, with mathematical notation rendered by MathJax.
+Accounts, photo upload/view/delete, and a locally stored marked-problem list all work and
+were exercised end to end in the smoke test. The site deploys on Vercel with durable
+storage in PostgreSQL, and the entire backend is about 400 lines of Python.
+
+\subsection{Limitations and risks}\label{sec:limits}
+\begin{enumerate}[label=L\arabic*.]
+  \item \textbf{Catalogue validation.} Counts describe raw JSON entries and do not prove
+        uniqueness or correctness. Editorial review is needed for dates, duplicates, source
+        links, mathematical transcription, and topic labels.
+  \item \textbf{Runtime search.} General text queries scan a normalised in-memory list.
+        The current corpus is about 16 MB of JSON; no benchmark establishes how response
+        time or memory will change as it grows.
+  \item \textbf{Photo access model.} Image retrieval relies on the UUID URL as a bearer
+        capability and does not verify a device or account token; delete does verify
+        ownership. Retention and deletion rules are not yet defined.
+  \item \textbf{User identity.} There is no password reset, email verification, or
+        account recovery. The session is a signed cookie with a 14-day lifetime.
+  \item \textbf{Quality and operations evidence.} No automated test suite, accessibility
+        audit, load test, or cross-browser matrix has been recorded. The smoke test ran
+        against a local database, not the production one.
+  \item \textbf{Screenshots.} Figures in Chapter~2 are now captured from the running basic
+        version; remaining illustrative figures are the corpus charts.
+  \item \textbf{Source use.} The content specification sets different rules for exams,
+        short magazine statements, and book metadata, but those rules need record-level
+        auditing.
+\end{enumerate}
+
+\subsection{Recommended next steps}
+\begin{itemize}
+  \item Add a reproducible content validation command for schema, duplicate IDs and
+        statements, broken source links, unexpected years, and required attribution.
+  \item Refresh screenshots whenever the UI changes.
+  \item Add an automated smoke test (register, login, upload, delete) runnable in CI.
+  \item Make the photo quota check atomic under concurrent requests.
+  \item Add password reset and email verification before treating accounts as production.
+  \item Decide whether image retrieval should require account verification and define
+        retention rules.
+  \item Complete source and permission review for every data provider.
+\end{itemize}
+
+\subsection{Conclusion}
+Rùa Toán Basic achieves its goal: the core learning loop runs on a stack that a student
+can read end to end, from a button in plain HTML to a SQL statement in FastAPI, with no
+framework and no build step in between. The improvement pass removed the Vercel routing
+defect that broke every API call, hardened the backend against the most common abuse
+paths, cut the deployable bundle roughly in half, and replaced the compressed stylesheet
+with a readable design system that supports dark mode. The remaining work is evidence and
+polish---screenshots, automated tests, and account hardening---rather than functionality.
+\clearpage

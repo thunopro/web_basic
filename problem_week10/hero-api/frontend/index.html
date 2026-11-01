@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Heroes API Frontend</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #f4f4f4; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Heroes List</h1>
+    <table id="heroes">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Age</th>
+                <th>Status</th>
+                <th>Team ID</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Data will be populated here -->
+        </tbody>
+    </table>
+
+    <h2>Create a Hero</h2>
+    <form id="createHeroForm">
+        <label>Name: <input type="text" name="name" required></label><br><br>
+        <label>Age: <input type="number" name="age"></label><br><br>
+        <label>Secret Name: <input type="text" name="secret_name" required></label><br><br>
+        <label>Status: 
+            <select name="status">
+                <option value="active">Active</option>
+                <option value="retired">Retired</option>
+            </select>
+        </label><br><br>
+        <label>Team ID: <input type="number" name="team_id"></label><br><br>
+        <button type="submit">Create</button>
+    </form>
+
+    <script>
+        const API = "http://127.0.0.1:8000/api/v1";
+        const tbody = document.querySelector("#heroes tbody");
+
+        async function loadHeroes() {
+            const res = await fetch(`${API}/heroes?limit=50`);
+            const heroes = await res.json();
+            tbody.replaceChildren();
+            for (const h of heroes) {
+                const tr = tbody.insertRow();
+                for (const v of [h.id, h.name, h.age ?? "-", h.status, h.team_id ?? "-"]) {
+                    tr.insertCell().textContent = v;
+                }
+            }
+        }
+
+        async function createHero(data) {
+            const res = await fetch(`${API}/heroes`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            });
+            if (res.status === 201) {
+                await loadHeroes();
+                document.getElementById("createHeroForm").reset();
+            } else if (res.status === 422) {
+                const err = await res.json();
+                alert(err.detail.map(d => `${d.loc.at(-1)}: ${d.msg}`).join("\n"));
+            } else {
+                alert(`Error ${res.status}`);
+            }
+        }
+
+        document.getElementById("createHeroForm").addEventListener("submit", (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            // Format numbers properly
+            if (data.age) data.age = Number(data.age);
+            else delete data.age;
+            if (data.team_id) data.team_id = Number(data.team_id);
+            else delete data.team_id;
+            
+            createHero(data);
+        });
+
+        loadHeroes();
+    </script>
+</body>
+</html>

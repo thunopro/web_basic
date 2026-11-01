@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <title>Visits</title>
+</head>
+<body>
+    <h1>Số lần truy cập: <span id="count">0</span></h1>
+    <button id="btn">Visit</button>
+    <script>
+        async function visit() {
+            const res = await fetch("/visits");
+            const data = await res.json();
+            document.getElementById("count").textContent = data.visits;
+        }
+        document.getElementById("btn").addEventListener("click", visit);
+        visit();
+    </script>
+</body>
+</html>
