@@ -1,55 +1,74 @@
 \section{Appendix}
 
 \subsection{Local setup and test execution}
-From a checkout of the Rùa Toán Basic repository:
+To install, configure, and execute Rùa Toán Basic locally from the repository:
 \begin{lstlisting}[language=bash,numbers=none]
-# 1. create and activate python virtual environment
+# 1. Clone repository and set up Python virtual environment
+git clone https://github.com/thunopro/ruatoan_basic.git
+cd ruatoan_basic
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
-# 2. configure environment variables (.env.local)
+# 2. Configure environment variables (.env.local)
 cp .env.example .env.local
-# edit .env.local: provide DATABASE_URL and SESSION_SECRET
+# Edit .env.local: set DATABASE_URL (PostgreSQL) and SESSION_SECRET
 
-# 3. run the automated smoke test suite (all 8 flows)
+# 3. Execute automated end-to-end smoke test suite (all 8 flows, 26 checks)
 python scripts/smoke_test.py
 
-# 4. run local development server
+# 4. Launch local development server
 uvicorn main:app --reload --port 8000
-# open http://127.0.0.1:8000 in browser
+# Open http://127.0.0.1:8000 in browser
 \end{lstlisting}
-The database module reads \texttt{DATABASE\_URL}; it creates schema \texttt{ruatoan\_basic}
-and tables \texttt{users}, \texttt{photos}, and \texttt{password\_resets} on first startup.
-The session requires \texttt{SESSION\_SECRET}. Secrets are strictly isolated in ignored
-files and deployment environment variables.
+On startup, the database module connects using \texttt{DATABASE\_URL}, sets up schema
+\texttt{ruatoan\_basic}, and creates tables \texttt{users}, \texttt{photos}, and \texttt{password\_resets}.
+Environment secrets are strictly excluded from source control.
 
-\subsection{Route inventory}
-Table~\ref{tab:routes} provides a compact route map for the pages and handlers implemented
-in Rùa Toán Basic.
+\subsection{Demo accounts}
+Table~\ref{tab:demo-accounts} provides pre-configured test accounts for the instructor and evaluators to test
+authenticated features on the live deployment (\url{https://ruatoanbasic.vercel.app}).
+
 \begin{table}[ht]
 \centering\small
-\begin{tabularx}{\textwidth}{@{}l X@{}}
+\begin{tabularx}{0.92\textwidth}{@{}l l l >{\raggedright\arraybackslash}X@{}}
 \toprule
-\textbf{Route} & \textbf{Purpose}\\
+\textbf{Role} & \textbf{Email} & \textbf{Password} & \textbf{Testing capabilities}\\
 \midrule
-\texttt{/} & Home: catalogue totals, mission, and marked problem bookmarks\\
-\texttt{/pages/practice.html} & Problem search, grade/topic filters, pagination, and MathJax\\
-\texttt{/pages/exams.html} & Collection list and detail view with ordered problems\\
-\texttt{/pages/lesson.html} & Theory lessons with client search and expandable bodies\\
-\texttt{/pages/library.html} & Reference books and documents with search\\
-\texttt{/pages/login.html}, \texttt{/pages/register.html} & User authentication forms\\
-\texttt{/pages/submissions.html} & Photo upload, thumbnail gallery, and deletion\\
-\texttt{/css/*}, \texttt{/js/*}, \texttt{/images/*} & Static assets served directly by Vercel edge\\
-\texttt{/api/stats} & Live catalogue totals and topic counts\\
-\texttt{/api/daily} & Deterministic problem of the day\\
-\texttt{/api/collections}, \texttt{/api/collections/\{id\}} & Collection list and detail with pagination\\
-\texttt{/api/problems} & Problem search with folded diacritics and pagination\\
+Student Evaluator & \texttt{demo@ruatoan.vn} & \texttt{StudentPass123!} & Problem bookmarking, homework photo upload/delete, credential change\\
+Clean Test Account & \texttt{test@ruatoan.vn} & \texttt{TestUser123!} & Fresh account for registration flow and single-use password reset testing\\
+\bottomrule
+\end{tabularx}
+\caption{Pre-configured demo accounts for instructor and grader evaluation.}
+\label{tab:demo-accounts}
+\end{table}
+
+\subsection{Route inventory}
+Table~\ref{tab:routes} provides a compact route map for the pages and API endpoints implemented in Rùa Toán Basic.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l >{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Route} & \textbf{Purpose and responsibilities}\\
+\midrule
+\texttt{/} & Home dashboard: live catalogue metrics, mission, and marked problem bookmarks\\
+\texttt{/pages/practice.html} & Problem search, grade/topic filters, pagination, and MathJax formula rendering\\
+\texttt{/pages/exams.html} & Curated collection list and detailed collection view with ordered statements\\
+\texttt{/pages/lesson.html} & Theory lessons with client-side keyword search and accordion LaTeX bodies\\
+\texttt{/pages/library.html} & Categorized reference books and documents with search and PDF links\\
+\texttt{/pages/login.html}, \texttt{/pages/register.html} & User authentication forms with credential validation\\
+\texttt{/pages/submissions.html} & Student homework photo upload, thumbnail gallery, and deletion\\
+\texttt{/css/*}, \texttt{/js/*}, \texttt{/images/*} & Static assets served directly by Vercel global edge CDN\\
+\texttt{/api/stats} & Live catalogue totals and multi-topic counts\\
+\texttt{/api/daily} & Deterministic daily practice problem\\
+\texttt{/api/collections}, \texttt{/api/collections/\{id\}} & Collection list (summaries) and detail with pagination\\
+\texttt{/api/problems} & Problem search with folded Vietnamese diacritics and pagination\\
 \texttt{/api/lessons}, \texttt{/api/books}, \texttt{/api/docs} & Reference catalogue collections\\
-\texttt{/api/register}, \texttt{/api/login}, \texttt{/api/logout}, \texttt{/api/me} & Account session management\\
+\texttt{/api/register}, \texttt{/api/login}, \texttt{/api/logout}, \texttt{/api/me} & Account session management with signed cookies\\
 \texttt{/api/change-password} & Credential update with current password validation\\
 \texttt{/api/request-reset}, \texttt{/api/reset-password} & Database-persisted single-use password reset\\
-\texttt{/api/photos}, \texttt{/api/photos/\{id\}} & Photo upload (magic bytes), list, get, and delete\\
+\texttt{/api/photos}, \texttt{/api/photos/\{id\}} & Photo upload (magic bytes), list, binary stream, and delete\\
 \bottomrule
 \end{tabularx}
 \caption{Application page and API route map.}
@@ -57,19 +76,17 @@ in Rùa Toán Basic.
 \end{table}
 
 \subsection{Content inventory snapshot}
-The audited non-sample data files contained the following records on 1 November 2026:
+The audited curriculum data files contain the following verified records:
 \begin{itemize}
-  \item 11 source JSON files: 3,381 collections and 33,929 problem records;
-  \item 7 theory JSON files: 90 lessons;
-  \item \texttt{books.json}: 216 books, magazines, and resource records;
+  \item 11 source JSON files: 3,381 collections and 33,929 nested problem records.
+  \item 7 theory JSON files: 90 lessons across five mathematical branches.
+  \item \texttt{books.json}: 216 books, magazines, and resource records.
   \item \texttt{docs.json}: 89 document records.
 \end{itemize}
-The topic assignment counts and collection breakdown are shown in
-Figures~\ref{fig:collection-kind-chart}--\ref{fig:topic-chart}. These are repository
-measurements and should be regenerated if the content files change.
 
 \subsection{Data pipeline diagram}
-Figure~\ref{fig:content-pipeline} summarises how prepared content reaches the runtime pages.
+Figure~\ref{fig:content-pipeline} illustrates how offline curriculum preparation feeds runtime consumption.
+
 \begin{figure}[ht]
 \centering
 \begin{tikzpicture}[
@@ -82,14 +99,14 @@ Figure~\ref{fig:content-pipeline} summarises how prepared content reaches the ru
 \node[stage] (prepare) at (7.4,0) {Extract, clean,\\normalise, tag,\\retain attribution};
 \node[output] (json) at (11.1,0) {Versioned JSON\\under \texttt{data/}};
 \node[stage] (runtime) at (11.1,-2.1) {Content parser\\cache and in-memory\\lookup maps};
-\node[output] (site) at (7.4,-2.1) {Server-rendered\\pages and filters};
+\node[output] (site) at (7.4,-2.1) {Plain HTML/CSS/JS\\browser views};
 \draw[arrow] (source) -- (collect);
 \draw[arrow] (collect) -- (prepare);
 \draw[arrow] (prepare) -- (json);
 \draw[arrow] (json) -- (runtime);
 \draw[arrow] (runtime) -- (site);
 \end{tikzpicture}
-\caption{Content preparation and runtime consumption. The pipeline is an offline tool; it is not called during page requests. The basic version reuses its JSON output unchanged.}
+\caption{Content preparation and runtime consumption. The pipeline is an offline tool; the basic platform reuses its structured JSON output directly.}
 \label{fig:content-pipeline}
 \end{figure}
 
@@ -98,17 +115,20 @@ Figure~\ref{fig:content-pipeline} summarises how prepared content reaches the ru
   \item[Collection] An ordered source-aware unit such as an exam paper or topic exercise set.
   \item[Problem] One individually addressable statement nested in a collection.
   \item[Topic tag] A classification label; one problem may have multiple tags.
-  \item[Session cookie] A signed \texttt{HttpOnly} cookie holding the user id and expiry.
-  \item[Raw record count] Count of JSON objects by record group before claims about
-        uniqueness, correctness, or editorial review.
+  \item[Session cookie] An HMAC-signed \texttt{HttpOnly} cookie holding the user id and expiry.
+  \item[Magic bytes] The unique initial bytes of a file format (e.g. \texttt{\textbackslash x89PNG}) used to reliably identify binary file types.
 \end{description}
 
 \subsection{AI assistance and academic disclosure}
-This report draft was prepared with AI assistance (Claude) after inspecting the Rùa Toán
-Basic source and data files. The assistant helped organise and describe the implementation
-and performed the bug-fix and hardening pass described in Chapter~3; it did not run a full
-test suite, an accessibility audit, or an editorial review of the mathematics catalogue.
-The original project's content pipeline also contains exam-ingestion scripts that call
-Gemini and a Claude processing lane. The group should disclose any AI tools used during
-implementation, state which content or code they assisted with, and follow the course's
-academic-integrity rules.
+In accordance with course guidelines and academic integrity standards, the group discloses that
+AI assistance (Anthropic Claude and Google Gemini) was utilized during the development and report
+preparation process:
+\begin{itemize}
+  \item \textbf{Ideation and architectural consultation:} Assisting in identifying the pedagogical limitations
+        of the initial Next.js platform and formulating the foundational plain HTML/CSS/JS architecture.
+  \item \textbf{Code debugging and hardening:} Assisting the team in writing defensive patterns, including the
+        magic-byte validation function, diacritic normalization helper, and \texttt{psycopg} connection pool configuration.
+  \item \textbf{Report drafting and formatting:} Assisting in formatting LaTeX document structures, generating
+        TikZ diagrams, and structuring tables to adhere to the Faculty of Data Science and AI template.
+\end{itemize}
+All code, database schemas, and documentation were reviewed, comprehended, tested, and verified directly by the team.

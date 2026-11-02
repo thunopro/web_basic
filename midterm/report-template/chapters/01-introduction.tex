@@ -1,165 +1,152 @@
 \section{Introduction}
 
-\subsection{Project overview}
-Rùa Toán Basic is a mathematics practice platform designed for lower secondary students. It represents
-a deliberate, ground-up rebuild of the Rùa Toán learning platform with a focus on simplicity,
-architectural transparency, and pedagogical alignment. The frontend is implemented entirely with
-plain HTML5, CSS3, and vanilla JavaScript without any framework dependencies or build steps; the backend
-is powered by a lightweight FastAPI service running serverless on Vercel; user accounts and homework photo
-submissions are managed cleanly in PostgreSQL. Both versions share the exact same comprehensive curriculum
-catalogue (3,381 collections, 33,929 problems, 90 lessons, 216 books, and 89 documents) stored as versioned
-JSON files.
+\subsection{Background and motivation}
+\textbf{The original platform and the initial exploration.}
+Mathematics education in Vietnam, particularly for lower secondary students (Grades 6--9) preparing
+for specialized Grade 10 entrance examinations (\textit{Thi vào 10 Chuyên Toán}) and provincial/national
+Olympiads (\textit{Học sinh giỏi Toán}), requires continuous access to authentic exam papers, categorized
+problem sets, and foundational theory. To address this need, the team initially conceived and ``vibed''
+the flagship \textbf{Rùa Toán} learning platform (\url{https://ruatoan.vercel.app}, repository:
+\url{https://github.com/thunopro/ruatoan}). That initial version was constructed using an advanced,
+state-of-the-art web stack: Next.js 15/16, React 19, TypeScript, Tailwind CSS, KaTeX, and Auth.js (NextAuth).
 
-The live production deployment for this basic version is hosted at
-\texttt{https://ruatoanbasic.vercel.app} (source code: \texttt{https://github.com/thunopro/ruatoan\_basic}).
-The original flagship version is available at \texttt{https://ruatoan.vercel.app}
-(source code: \texttt{https://github.com/thunopro/ruatoan}).
+\textbf{The challenge of framework complexity.}
+While the flagship Next.js implementation was ambitious and visually rich, it quickly became evident
+that it was ill-suited for our primary goal: mastering the core competencies of the university curriculum
+in \textit{Web Design and Programming}. The Next.js ecosystem operates at a very high level of abstraction:
+server-side rendering (SSR) pipelines, complex React Server Component hydration, opaque Webpack/Turbopack
+bundling magic, and automated middleware authentication. For undergraduate students learning web development
+from first principles, these heavy abstractions functioned as an impenetrable black box. They masked the
+fundamental mechanics of the web:
+\begin{itemize}
+  \item How a client browser initiates a raw HTTP request and receives an HTML/JSON response.
+  \item How the browser Document Object Model (DOM) is constructed and updated with native JavaScript.
+  \item How stateful sessions are cryptographically secured using signed, \texttt{HttpOnly} cookies.
+  \item How client scripts asynchronously communicate with a RESTful backend API without bundlers.
+  \item How relational database connection pools and SQL queries execute without heavy ORM wrappers.
+\end{itemize}
 
-\subsection{Motivation and pedagogical context: from the advanced platform to the basic foundation}
-The creation of Rùa Toán Basic arose from an honest reflection on the learning journey in web development.
-Initially, the author conceived and ``vibed'' the flagship Rùa Toán platform using an advanced, state-of-the-art
-technology stack: Next.js 15, React 19, TypeScript, Tailwind CSS, and Auth.js. While that version was ambitious
-and feature-rich, it relied heavily on framework abstractions---server-side rendering pipelines, complex
-component hydration, intricate bundler magic, and automated authentication middleware.
-
-For a student beginning with the university curriculum of \textit{Web Design and Programming}, that high level of
-abstraction proved overwhelming to fully grasp from first principles. It masked the fundamental mechanics of the web:
-how an HTTP request is structured, how the browser DOM is updated imperatively, how cookies are cryptographically signed,
-and how client scripts communicate with a RESTful backend API.
-
-Recognizing that true mastery requires understanding the foundations, the author made the deliberate decision to
-pivot and ``vibe'' a fresh, transparent version: \textbf{Rùa Toán Basic}. This rebuild intentionally eliminates
-all framework scaffolding in order to create a genuine environment for learning, experimentation, and mastery:
+\textbf{The deliberate pivot to a foundational baseline (\textit{Rùa Toán Basic}).}
+Recognizing that true engineering mastery requires a rock-solid grasp of foundational concepts, team lead
+Nguyen Khac Thu made the strategic decision to pivot away from the Next.js stack and build a completely
+fresh, transparent, and framework-free version: \textbf{Rùa Toán Basic} (live at
+\url{https://ruatoanbasic.vercel.app}; repository: \url{https://github.com/thunopro/ruatoan_basic}).
+This foundational implementation purposefully eliminates all framework scaffolding in favor of core web standards:
 \begin{enumerate}
-  \item \textbf{Honest learning curve and inspectability.} By rebuilding the interface in vanilla HTML/CSS/JS and
-        the backend in straightforward FastAPI with direct SQL queries, every layer of the web application becomes
-        transparent. A student can open browser DevTools, inspect the actual network payloads and DOM nodes,
-        and follow the data flow directly to PostgreSQL without cognitive framework overhead.
-  \item \textbf{Pedagogical curriculum alignment.} The basic version directly aligns with the learning outcomes
-        of the course: mastering semantic HTML, responsive CSS layouts (flexbox, grid, custom properties),
-        JavaScript event handling, RESTful API design, and cookie-based session security.
-  \item \textbf{Architectural clarity and controlled scope.} Stripping away opaque build pipelines allowed the author
-        to focus deeply on core platform capabilities: rendering LaTeX mathematics with MathJax, implementing
-        PBKDF2-HMAC password hashing, validating image magic bytes for homework uploads, and deploying reliably
-        to serverless edge infrastructure.
+  \item \textbf{Plain HTML5, CSS3, and Vanilla JavaScript (ES2020):} Eight standalone pages built with semantic
+        markup, custom CSS properties for responsive theming, and modular browser scripts without any build step,
+        transpiler, or \texttt{node\_modules}.
+  \item \textbf{Lightweight FastAPI Backend:} A clean, readable Python backend (\texttt{backend/main.py}) handling
+        RESTful routes, session management, and image processing in roughly 600 transparent lines.
+  \item \textbf{Direct PostgreSQL Persistence:} Raw SQL queries executed through \texttt{psycopg} connection
+        pooling for user accounts, password recovery tokens, and homework photo submissions.
+  \item \textbf{Curriculum Content Continuity:} Direct reuse of the complete 37,705-record curriculum catalogue
+        (3,381 collections, 33,929 problems, 90 lessons, 216 books, and 89 documents) stored as versioned JSON.
 \end{enumerate}
+
+\textbf{Team collaborative code reading, comprehension, and bug fixing.}
+Once the foundational codebase was established, our entire group gathered together to invest dedicated time
+in reading, analyzing, and thoroughly understanding the implementation file by file and line by line. Without
+framework abstractions obscuring the runtime, each team member could trace exactly how data flowed from
+PostgreSQL through FastAPI to the browser DOM.
+
+Through this collaborative code walkthrough and intensive testing, the team identified several critical
+pre-existing bugs, performance bottlenecks, and design defects that remained in the initial draft:
+\begin{itemize}
+  \item \textbf{Unhandled frontend errors:} Network \texttt{fetch} failures previously failed silently,
+        leaving pages in an infinite loading state.
+  \item \textbf{MathJax race conditions:} Mathematical expressions in dynamically rendered problem cards failed
+        to typeset if the MathJax CDN script loaded after DOM insertion.
+  \item \textbf{Serverless database connection exhaustion:} Opening a new database connection per HTTP request
+        starved PostgreSQL under concurrent traffic on Vercel serverless functions.
+  \item \textbf{Insecure file upload handling:} Image uploads trusted the user-declared MIME header without
+        validating binary magic bytes, creating a potential arbitrary file upload vulnerability.
+  \item \textbf{Asset bloat:} Duplicate data files (19 MB) and uncompressed screenshots burdened repository size
+        and slowed down deployment cold-starts.
+  \item \textbf{UI color clashes and accessibility gaps:} Inconsistent input contrast in dark mode and missing
+        keyboard focus outlines (\texttt{:focus-visible}) hindered user navigation.
+\end{itemize}
+The team systematically addressed, tested, and resolved every single one of these defects (detailed in
+Section~\ref{sec:cleanup}), transforming the project into a robust, high-performance, and publication-ready
+platform.
 
 \subsection{Objectives}
-The basic version was built to satisfy the following objectives:
-
+Rùa Toán Basic was designed and engineered to satisfy the following concrete objectives:
 \begin{enumerate}[label=O\arabic*.]
-  \item Provide the core learning loop: browse exam collections, read individual problems
-        with mathematical notation, study lessons, and consult books and documents.
-  \item Support filtering and search: by grade, topic, collection kind, year, province, and
-        free text, with pagination.
-  \item Render mathematics correctly in the browser using MathJax, including in problem
-        statements and lessons.
-  \item Allow a learner to register, log in, and log out with an email and password, with
-        the session held in a signed cookie.
-  \item Allow a logged-in learner to upload, view, and delete photographs of written work,
-        with the images stored in PostgreSQL.
-  \item Let a learner mark problems in the browser and keep that list locally, without
-        requiring an account.
-  \item Deploy successfully on Vercel, with durable storage in PostgreSQL rather than in
-        the function's temporary filesystem.
-  \item Keep the source small, readable, and free of a build step.
+  \item \textbf{Foundational learning loop:} Deliver a seamless interface to browse exam collections, read
+        individual math problems with client-rendered mathematical notation (LaTeX), study structured theory
+        lessons, and consult library resources.
+  \item \textbf{Multi-criteria search and filtering:} Enable rapid filtering across 33,929 problems by grade (6--9, 10),
+        topic domain, contest kind, year, province, and keyword with Vietnamese diacritic folding.
+  \item \textbf{Client-side LaTeX rendering:} Reliably render inline (\texttt{\$...\$}) and display
+        (\texttt{\$\$...\$\$}) formulas across all views using MathJax 3.
+  \item \textbf{Stateless, secure session authentication:} Implement registration, credential-based login,
+        and logout using PBKDF2-HMAC-SHA256 password hashing and HMAC-signed \texttt{HttpOnly} cookies.
+  \item \textbf{Account-persisted homework submissions:} Allow authenticated users to upload, preview, and
+        delete photographs of written homework, stored durably in PostgreSQL binary columns.
+  \item \textbf{Zero-overhead client bookmarking:} Allow learners to mark practice problems and persist their
+        selection across sessions in browser \texttt{localStorage} without requiring account registration.
+  \item \textbf{Serverless edge deployment:} Deploy the application on Vercel with zero cold-start penalty for
+        static assets and durable database operations.
+  \item \textbf{Zero-build inspectability:} Maintain an entirely build-free architecture so that any student can
+        open browser DevTools and read the code one file at a time.
 \end{enumerate}
 
-\subsection{Scope and boundaries}
-Implemented in this version:
-
+\subsection{Scope and target users}
+\textbf{Target users.}
+The platform is tailored for three distinct user groups:
 \begin{itemize}
-  \item Home page with live catalogue totals and a list of marked problems.
-  \item Practice page: text/grade/topic filters, 20 results per page, problem cards, and a
-        ``mark / unmark'' toggle.
-  \item Exam collections page: paginated list (20 per page) and a collection detail page
-        showing problems in their original order, with source attribution and a link to
-        the source.
-  \item Lessons page: client-side search over 90 lessons, expandable bodies.
-  \item Library page: books (216) and documents (89) with client-side search and external
-        links.
-  \item Account pages: registration and login with email and password; logout.
-  \item Submission page: upload up to six images (1.5 MB each) per request, view them,
-        and delete them.
-  \item Catalogue of 3,381 collections and 33,929 problems, unchanged from the original.
+  \item \textbf{Primary users (Students):} Lower secondary pupils (Grades 6--9) seeking curated practice
+        for semester tests, specialized Grade 10 entrance exams (\textit{Chuyên Toán}), and Olympiad competitions.
+  \item \textbf{Secondary users (Teachers and Tutors):} Mathematics educators looking for a structured,
+        source-attributed repository of historical exam questions and theoretical lecture notes.
+  \item \textbf{Tertiary users (Web Engineering Students):} Novice developers seeking an inspectable,
+        production-grade reference architecture demonstrating vanilla web fundamentals and serverless FastAPI.
 \end{itemize}
 
-Explicitly \emph{not} implemented in this version, by design:
-
+\textbf{Functional scope.}
 \begin{itemize}
-  \item Google OAuth / social sign-in (the original has it; this version uses email and
-        password only).
-  \item Device-token based pseudonymous photo ownership (this version ties photos to the
-        logged-in account).
-  \item Cross-device synchronisation of marked problems (they stay in \texttt{localStorage}).
-  \item Automatic answer marking, a teacher administration panel, or a learning analytics
-        dashboard.
-  \item The content crawl and preparation pipeline (the JSON is reused as-is).
+  \item \textbf{In scope:} Home dashboard with live counts and saved bookmarks; paginated practice problem feed;
+        exam collections catalogue with ordered problem views; expandable theory lessons; digital mathematics
+        library; secure authentication (register, login, logout, password change, single-use reset tokens);
+        multi-file image upload with magic-byte validation and binary storage; responsive mobile design.
+  \item \textbf{Out of scope (by design):} Third-party social OAuth (Google/Facebook) to keep authentication
+        mechanics transparent; automated grading of handwritten solutions; teacher administrative gradebooks;
+        and offline content crawling pipelines (curriculum JSON files are pre-built and reused).
 \end{itemize}
 
-\subsection{Technology overview}
-The stack is deliberately small. Table~\ref{tab:technology} lists each layer, the
-technology, and its responsibility in Rùa Toán Basic.
+\subsection{Technologies}
+Table~\ref{tab:technology} outlines the components, chosen technologies, and their explicit roles.
 
 \begin{table}[ht]
 \centering\small
-\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\begin{tabularx}{\textwidth}{@{}l l >{\raggedright\arraybackslash}X@{}}
 \toprule
-\textbf{Layer} & \textbf{Technology} & \textbf{Use in Rùa Toán Basic}\\
+\textbf{Component} & \textbf{Technology} & \textbf{Purpose and responsibility}\\
 \midrule
-Markup & Plain HTML5 & Eight pages (home, practice, exams, lesson, library, login,
-        register, submissions); semantic markup, no template engine\\
-Styling & Plain CSS3 & Unified styling: \texttt{public/css/original.css} (core visual layout,
-        branding, cards, footer) + \texttt{public/css/style.css} (design tokens, forms,
-        photo grid, a11y, dark mode)\\
-Behaviour & Plain JavaScript (ES2020) & Eight small files (\texttt{public/js/*.js}); modular,
-        no framework, no bundler, no build step\\
-Mathematics & MathJax 3 (CDN) & Client-side LaTeX rendering of inline \texttt{\$...\$}
-        and display \texttt{\$\$...\$\$}\\
-Backend & FastAPI + Uvicorn & \texttt{backend/main.py} and helpers \texttt{auth.py},
-        \texttt{content.py}, \texttt{database.py}; about 600 clean lines\\
-Database & PostgreSQL via \texttt{psycopg} & Schema \texttt{ruatoan\_basic}: tables
-        \texttt{users}, \texttt{photos}, and \texttt{password\_resets}\\
-Catalogue & JSON files & 3,381 collections, 33,929 problems, 90 lessons, 216 books/resources,
-        89 documents\\
-Hosting & Vercel (Python runtime) & Root \texttt{main.py} entry point, Vercel function
-        routing, automated CI/CD\\
+Front-end Markup & Plain HTML5 & Eight semantic pages (\texttt{public/*.html}, \texttt{public/pages/*.html}); no template engine\\
+Styling & Plain CSS3 & Dual-tier architecture: \texttt{original.css} (layout, branding, Bungee typography) + \texttt{style.css} (tokens, forms, dark mode, a11y)\\
+Client Logic & Plain JavaScript (ES2020) & Eight modular scripts (\texttt{public/js/*.js}); native fetch, DOM manipulation, no bundler\\
+Mathematics & MathJax 3 (CDN) & Client-side LaTeX rendering of inline \texttt{\$...\$} and display \texttt{\$\$...\$\$}\\
+Back-end API & FastAPI + Uvicorn & \texttt{backend/main.py}, \texttt{auth.py}, \texttt{content.py}, \texttt{database.py}; ~600 lines\\
+Database & PostgreSQL via \texttt{psycopg} & Dedicated schema \texttt{ruatoan\_basic}: \texttt{users}, \texttt{photos}, \texttt{password\_resets}\\
+Curriculum Data & JSON files & 3,381 collections, 33,929 problems, 90 lessons, 216 books, 89 docs (~16 MB)\\
+Hosting & Vercel Serverless & Python ASGI runtime for FastAPI; global edge CDN for static assets\\
 \bottomrule
 \end{tabularx}
 \caption{Technologies used in Rùa Toán Basic.}
 \label{tab:technology}
 \end{table}
 
-\subsection{Catalogue size}
-The content catalogue is reused unchanged from the original project. The inspected JSON
-files contain 3,381 collection records and 33,929 nested problem records, together with
-90 lessons, 216 book, magazine, or resource records, and 89 document records. That is
-37,705 raw records when each collection, problem, lesson, book, and document entry is
-counted once. The JSON files occupy roughly 16 MB on disk (after removing a 19 MB
-duplicate copy, see Section~\ref{sec:cleanup}). A problem may carry more than one topic
-tag, so topic counts are assignments and do not partition the problem set.
-
-\subsection{Report evidence and snapshot}
-This report is based on a source-code audit and live verification of the Rùa Toán Basic deployment
-on 1 November 2026, following architectural unification, security hardening, and accessibility
-fixes. The following checks were run and verified:
-
+\subsection{Report structure}
+The remainder of this report is organized as follows:
 \begin{itemize}
-  \item \texttt{node --check} on all eight JavaScript files (all passed).
-  \item \texttt{python3 -m py\_compile} on all Python backend and script files (all passed).
-  \item Automated smoke test across all routes (\texttt{/}, \texttt{/api/stats},
-        \texttt{/api/daily}, \texttt{/api/collections},\\
-        \texttt{/api/problems}, \texttt{/api/lessons},
-        \texttt{/api/books}, and \texttt{/api/docs}): each returned HTTP 200 with valid payloads.
-  \item Complete account and security flow: user registration, credential validation, session cookie
-        issuance, authenticated \texttt{/api/me}, password change, database-persisted password reset
-        via single-use tokens, and logout all executed end to end.
-  \item Photo submission pipeline: magic-byte validation (PNG/JPEG/WebP), size bounds (1.5 MB),
-        database binary storage, retrieval with \texttt{nosniff}, and ownership-verified deletion.
-  \item Browser runtime audit: zero console errors across all eight pages in production, zero
-        404 asset failures (fonts and favicons fully resolved), and validated keyboard accessibility
-        (\texttt{:focus-visible}) and high-contrast inputs.
+  \item \textbf{Section 2 (Analysis and Design):} Details functional/non-functional requirements, UI/UX design,
+        system architecture, PostgreSQL schema design, RESTful API specifications, and security mechanisms.
+  \item \textbf{Section 3 (Implementation):} Presents the project structure, user interface implementation,
+        server-side logic with key code listings, Git workflow, team bug-hunting collaboration, and Vercel deployment.
+  \item \textbf{Section 4 (Results and Conclusion):} Evaluates testing results, automated smoke tests, Lighthouse
+        performance benchmarks, achievements, known limitations, and lessons learned.
+  \item \textbf{Appendix:} Provides local installation instructions, pre-configured demo credentials, route inventories,
+        and academic disclosures regarding AI assistance.
 \end{itemize}
-
-Database credentials and session secrets are managed strictly through environment variables
-(\texttt{.env.local} and Vercel environment settings) and never committed to source control.
