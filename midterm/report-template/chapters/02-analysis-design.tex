@@ -34,9 +34,9 @@ beyond the smoke test described in Chapter~\ref{chap:results}.
         benchmark was collected (the basic version has no dedicated print view).
   \item \textbf{Source transparency:} collection pages show source names and link to
         source pages when URLs are available.
-  \item \textbf{Keyboard and assistive-technology support:} the layout includes visible
-        keyboard focus (\texttt{:focus-visible}), labelled navigation and controls, and
-        \texttt{aria-label} on inputs without a visible label. These are implementation
+  \item \textbf{Keyboard and assistive-technology support:} includes visible
+        keyboard focus (\texttt{:focus-visible}), clearly labelled controls, and
+        \texttt{aria-label} attributes on inputs lacking visible text labels. These are implementation
         details, not evidence of a completed accessibility audit.
   \item \textbf{Bounded image input:} the API accepts PNG/JPEG/WebP only, no more than
         six files per request, 1.5 MB per file, and 50 images per account in total.
@@ -53,7 +53,7 @@ beyond the smoke test described in Chapter~\ref{chap:results}.
 The interface is structured around the authentic Rùa Toán design system: a deep forest green
 background (\texttt{\#0F3D2E}, \texttt{--bg}), dark panels (\texttt{\#164A38} / \texttt{\#163523}),
 and high-contrast warm parchment paper cards (\texttt{\#FFF8E7}, \texttt{--surface}) for readable
-mathematical notation. The visual identity highlights lively turtle-themed accents: vibrant lime
+mathematical notation. The visual identity highlights lively turtle accents: vibrant lime
 (\texttt{\#B6FF3B} / \texttt{\#A3E635}, \texttt{--ooze}), warm gold (\texttt{\#FBB03B}), and
 terracotta coral (\texttt{\#FF6F59}). Typography pairs Google Font \textbf{Bungee} for playful,
 retro gaming-style headers, collection badges, and numeric stats with \textbf{Be Vietnam Pro} for
@@ -149,13 +149,13 @@ PostgreSQL. There is no OAuth provider and no build step.
 \centering
 \begin{tikzpicture}[
   box/.style={draw=PrussianBlue,fill=PaleBlue,rounded corners=2pt,align=center,text width=3.1cm,minimum height=1.15cm},
-  data/.style={draw=FDABlue,fill=Solitude,rounded corners=2pt,align=center,text width=3.15cm,minimum height=1.1cm},
+  data/.style={draw=FDABlue,fill=Solitude,rounded corners=2pt,align=center,text width=3.45cm,minimum height=1.1cm},
   arrow/.style={->,thick,color=PrussianBlue}
 ]
 \node[box] (browser) at (0,0) {\textbf{Student browser}\\HTML/CSS/JS\\MathJax; localStorage};
 \node[box] (vercel) at (5,0) {\textbf{Vercel}\\Static files from \texttt{public/}\\FastAPI function for \texttt{/api/*}};
 \node[data] (json) at (10.3,1.8) {\textbf{Catalogue JSON}\\Collections and problems\\Lessons, books, documents};
-\node[data] (pg) at (10.3,-1.5) {\textbf{PostgreSQL}\\\texttt{ruatoan\_basic.users}\\ \texttt{ruatoan\_basic.photos}};
+\node[data] (pg) at (10.3,-1.5) {\textbf{PostgreSQL}\\{\footnotesize\texttt{ruatoan\_basic.users}}\\{\footnotesize\texttt{ruatoan\_basic.photos}}};
 \draw[arrow,<->] (browser) -- (vercel);
 \draw[arrow] (vercel) -- (json);
 \draw[arrow,<->] (vercel) -- (pg);
@@ -260,7 +260,7 @@ on first use and three tables:
 \begin{itemize}
   \item \texttt{users(id, name, email, password\_hash, created\_at)} with a unique index
         on \texttt{lower(email)} (case-insensitive uniqueness).
-  \item \texttt{photos(id, user\_id, file\_name, content\_type, byte\_size, data, created\_at)}
+  \item \texttt{photos(id, user\_id, file\_name, content\_type, byte\_size,} \texttt{data, created\_at)}
         with an index on \texttt{(user\_id, created\_at)} for per-user history ordered by
         time, cascading on user deletion.
   \item \texttt{password\_resets(id, user\_id, token\_hash, expires\_at, created\_at)}
@@ -288,24 +288,24 @@ smoke test.
 
 \begin{table}[ht]
 \centering\footnotesize
-\begin{tabularx}{\textwidth}{@{}l l X X@{}}
+\begin{tabularx}{\textwidth}{@{}l l >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X@{}}
 \toprule
 \textbf{Method} & \textbf{Path} & \textbf{Request} & \textbf{Successful result / explicit errors}\\
 \midrule
-GET & \texttt{/api/stats} & none & \texttt{\{collections,problems,lessons,books,docs,topics\}}\\
-GET & \texttt{/api/daily} & none & \texttt{\{problem,collection\}} for today's problem\\
-GET & \texttt{/api/collections} & \texttt{?page,limit,grade,kind,year,province,search} & \texttt{\{total,page,items\}} (summary, no problem arrays)\\
-GET & \texttt{/api/collections/\{id\}} & \texttt{?page,per} & collection metadata + one page of problems; 404 if missing\\
-GET & \texttt{/api/problems} & \texttt{?page,limit,search,grade,topic} & \texttt{\{total,page,items\}}\\
+GET & \texttt{/api/stats} & none & \texttt{\{collections,} \texttt{problems,} \texttt{lessons,} \texttt{books,} \texttt{docs,} \texttt{topics\}}\\
+GET & \texttt{/api/daily} & none & \texttt{\{problem, collection\}} for today's problem\\
+GET & \texttt{/api/collections} & \texttt{?page,} \texttt{limit,} \texttt{grade,} \texttt{kind,} \texttt{year,} \texttt{province,} \texttt{search} & \texttt{\{total, page, items\}} (summary, no problem arrays)\\
+GET & \texttt{/api/collections/\{id\}} & \texttt{?page, per} & collection metadata + one page of problems; 404 if missing\\
+GET & \texttt{/api/problems} & \texttt{?page,} \texttt{limit,} \texttt{search,} \texttt{grade,} \texttt{topic} & \texttt{\{total, page, items\}}\\
 GET & \texttt{/api/lessons} & \texttt{?search} & \texttt{\{items\}}\\
 GET & \texttt{/api/books} & \texttt{?search} & \texttt{\{items\}}\\
 GET & \texttt{/api/docs} & \texttt{?search} & \texttt{\{items\}}\\
-POST & \texttt{/api/register} & JSON \texttt{\{name,email,password\}} & \texttt{\{user\}}; 400/409 on validation or duplicate email\\
-POST & \texttt{/api/login} & JSON \texttt{\{email,password\}} & \texttt{\{user\}} + session cookie; 401 on bad credentials\\
+POST & \texttt{/api/register} & JSON \texttt{\{name,} \texttt{email,} \texttt{password\}} & \texttt{\{user\}}; 400/409 on validation or duplicate email\\
+POST & \texttt{/api/login} & JSON \texttt{\{email, password\}} & \texttt{\{user\}} + session cookie; 401 on bad credentials\\
 POST & \texttt{/api/logout} & session cookie & clears cookie\\
-POST & \texttt{/api/change-password} & JSON \texttt{\{old\_password,new\_password\}}, session cookie & \texttt{\{ok:true\}}; 400/401 on bad input\\
-POST & \texttt{/api/request-reset} & JSON \texttt{\{email\}} & \texttt{\{ok:true,token\}}; generates 30-min token in DB; 503 on error\\
-POST & \texttt{/api/reset-password} & JSON \texttt{\{token,new\_password\}} & \texttt{\{ok:true\}}; 400 on invalid/expired token or bad length\\
+POST & \texttt{/api/change-password} & JSON \texttt{\{old\_password,} \texttt{new\_password\}}, session cookie & \texttt{\{ok:true\}}; 400/401 on bad input\\
+POST & \texttt{/api/request-reset} & JSON \texttt{\{email\}} & \texttt{\{ok:true, token\}}; generates 30-min token in DB; 503 on error\\
+POST & \texttt{/api/reset-password} & JSON \texttt{\{token, new\_password\}} & \texttt{\{ok:true\}}; 400 on invalid/expired token or bad length\\
 GET & \texttt{/api/me} & session cookie (optional) & \texttt{\{user\}} or \texttt{\{user:null\}}\\
 GET & \texttt{/api/photos} & session cookie & \texttt{\{items\}} of the logged-in user's photos\\
 POST & \texttt{/api/photos} & multipart \texttt{files} (1--6), session cookie & \texttt{\{items\}}; 400/401/409/413 on validation or quota\\

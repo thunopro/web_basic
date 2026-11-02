@@ -33,7 +33,7 @@ requests reuse the parsed data. The loader reads \texttt{data/sources/*.json}
 (excluding files whose name starts with \texttt{\_}), \texttt{data/theory/*.json},
 \texttt{books.json}, and \texttt{docs.json}.
 
-For search, \texttt{fold\_text} in \texttt{backend/main.py} normalises Vietnamese
+For search, helper \texttt{fold\_text} in \texttt{backend/main.py} normalises Vietnamese
 diacritics (NFD decomposition, dropping combining marks, mapping \texttt{đ} to \texttt{d})
 and lowercases. This is done \emph{once per problem at load time}: each problem gets a
 \texttt{\_search} field containing the folded text of its label, statement, collection
@@ -68,7 +68,7 @@ formulas appear correctly even when the CDN is slow.
   \item[Collections (\texttt{exams.html} + \texttt{exams.js}.)] Lists collections 20 per
         page with a ``Xem thêm'' button. The detail view (\texttt{?id=...}) shows
         problems in order, a source link, and mark buttons.
-  \item[Lessons (\texttt{lesson.html} + \texttt{lessons.js}.)] Loads all 90 lessons once,
+  \item[Lessons (\texttt{lesson.html} + \texttt{lessons.js}.)] Loads all ninety lessons once,
         then filters client-side by title/summary. Each title is a toggle button that
         expands the lesson body and calls \texttt{renderMath()}.
   \item[Library (\texttt{library.html} + \texttt{library.js}.)] Loads books and documents
@@ -92,8 +92,8 @@ logout, and provides helpers used by every page: \texttt{escapeText}, \texttt{sa
 external auth libraries:
 
 \begin{itemize}
-  \item \texttt{hash\_password} uses \texttt{hashlib.pbkdf2\_hmac('sha256', ..., 200000)}
-        with a 16-byte \texttt{os.urandom} salt and stores
+  \item \texttt{hash\_password} relies on \texttt{hashlib.pbkdf2\_hmac} with SHA-256 and
+        200,000 iterations, using a 16-byte \texttt{os.urandom} salt, and stores
         \texttt{pbkdf2\_sha256\$200000\$<salt>\$<hash>} (hex).
   \item \texttt{check\_password} accepts both the new prefixed format and the legacy bare
         hex format, so old hashes keep working if the cost is raised later.
@@ -197,6 +197,6 @@ and desktop viewports.
 
 \subsection{Content preparation}
 The content directory is reused unchanged from the original project; the crawl and
-preparation pipeline (Python/Node scripts, Gemini/Claude-assisted extraction) is not part
+preparation scripts (Python/Node, Gemini/Claude extraction) are not part
 of this version and is not run during page requests. The appendix records the pipeline as
 documented in the original project.

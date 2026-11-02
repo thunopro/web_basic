@@ -147,9 +147,10 @@ fixes. The following checks were run and verified:
 \begin{itemize}
   \item \texttt{node --check} on all eight JavaScript files (all passed).
   \item \texttt{python3 -m py\_compile} on all Python backend and script files (all passed).
-  \item Comprehensive automated smoke test: \texttt{/}, \texttt{/api/stats}, \texttt{/api/daily},
-        \texttt{/api/collections}, \texttt{/api/problems}, \texttt{/api/lessons},
-        \texttt{/api/books}, and \texttt{/api/docs} all returned HTTP 200 with valid payloads.
+  \item Automated smoke test across all routes (\texttt{/}, \texttt{/api/stats},
+        \texttt{/api/daily}, \texttt{/api/collections},\\
+        \texttt{/api/problems}, \texttt{/api/lessons},
+        \texttt{/api/books}, and \texttt{/api/docs}): each returned HTTP 200 with valid payloads.
   \item Complete account and security flow: user registration, credential validation, session cookie
         issuance, authenticated \texttt{/api/me}, password change, database-persisted password reset
         via single-use tokens, and logout all executed end to end.
