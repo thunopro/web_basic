@@ -4,14 +4,14 @@ The requirements below describe the implemented basic version, not every advance
 
 \subsubsection{Functional requirements}
 \begin{enumerate}[label=FR\arabic*.]
-  \item Show the home page, navigation, and counts for collections, problems, lessons, books, and documents.
-  \item Search individual questions by text, grade, and topic; list exercise collections, search by title or province, and move through paginated results.
-  \item Open a collection and read its questions in their original order, including mathematical notation and source information when available.
-  \item List lessons and search lesson titles or summaries.
-  \item List books, magazines, and documents and follow their external links.
-  \item Register with a name, email, and password; sign in and sign out; show the signed-in name in the shared navigation.
-  \item Upload up to six JPG, PNG, or WebP files per request; view and delete photos belonging to the signed-in account.
-  \item Save a problem bookmark in browser storage and show the saved list on the home page on that same browser.
+  \item Show the home page, navigation, deterministic daily problem (\texttt{/api/daily}), and counts for collections, problems, lessons, books, and documents.
+  \item Search individual questions by text (with Vietnamese accent-insensitive matching), grade, and canonical topic tabs; list exercise collections by category (\textit{HSG}, \textit{Vào 10}, \textit{Tạp chí}, \textit{Chuyên đề}, \textit{Olympic}), search by title or province, and move through paginated results.
+  \item Open a collection and read its questions in their original order inside a full-width printable exam sheet, including formatted Markdown, mathematical notation, per-question homework photo uploads, and source attribution when available.
+  \item List lessons with topic tabs, search lesson titles or summaries (accent-insensitive), and expand lessons inline to read full Markdown content and practice examples.
+  \item List books, magazines, and PDF documents with topic filtering, search, and external/download links.
+  \item Register with a name, email, and password; sign in and sign out; change password or request a password reset token; show the signed-in name in the shared navigation.
+  \item Compress selected homework photos in the browser (grayscale WebP up to 1000 px), upload up to six JPG, PNG, or WebP files per request (optionally linked to a specific problem ID), and view (with Lightbox preview) or delete photos belonging to the signed-in account.
+  \item Save problem bookmarks in browser storage (\texttt{localStorage}) and show/manage the saved list on the home page on that same browser.
 \end{enumerate}
 
 \subsubsection{Non-functional requirements}
@@ -27,11 +27,11 @@ The requirements below describe the implemented basic version, not every advance
 \end{itemize}
 
 \subsection{Interface design}
-The interface uses a light green background, dark text, white cards, and green action buttons. A shared navigation bar appears on the home page and the learning pages. It links to practice, exams, lessons, and the library. The account area changes depending on whether \texttt{/api/me} returns an active user.
+The interface ports the signature ``Chibi Ninja Turtle'' retro arcade theme from the original Rùa Toán application via \texttt{original.css} and \texttt{style.css}: a deep forest-green pixel-grid background, warm parchment scroll cards (\texttt{.scroll}), custom SVG Ninja Turtle mascots representing the four math clans (\textit{Số học}, \textit{Đại số}, \textit{Hình học}, \textit{Tổ hợp}), and tactile 3D arcade buttons. A shared navigation bar appears on the home page and all learning pages, highlighting the active route and updating the account area based on \texttt{/api/me}.
 
-The home page introduces the site, links to the main activities, displays catalogue totals, and shows saved browser bookmarks. The practice page provides a search field, a grade selector, and a list of collection cards. The exam page displays one collection at a time and keeps its questions in source order. The lesson and library pages provide simple search fields. The login and registration pages use normal HTML forms. The submission page contains an image file input and a grid of the user's uploaded images.
+The home page introduces the four math clans, features the deterministic daily problem with inline homework photo upload, displays catalogue totals, and lists saved browser bookmarks. The practice page provides interactive topic tabs, a search field, a grade selector, and paginated problem cards. The exam page provides category tabs, search/grade filters, and a full-width printable exam view (\texttt{.de}) that keeps questions in source order. The lesson and library pages provide topic tabs and accent-insensitive search fields. The login and registration pages provide tab-switched authentication forms and an inline password-reset panel. The submission page contains a client-side WebP image compressor/uploader, a gallery with Lightbox preview, and a password-change card.
 
-Mathematics text is inserted as text rather than executable HTML. MathJax is loaded by the shared JavaScript helper to display common dollar-delimited expressions. If the external math-rendering script is unavailable, the plain mathematical notation remains visible.
+Problem and lesson text is sanitized and formatted by a safe client-side Markdown helper (\texttt{renderMarkdown}) before MathJax renders dollar-delimited expressions. If the external math-rendering script is unavailable, the plain mathematical notation remains visible.
 
 \subsection{System architecture}
 Figure~\ref{fig:basic-architecture} shows the main request path. The browser downloads static HTML, CSS, JavaScript, and JSON files. Browser JavaScript calls the FastAPI routes under \texttt{/api}. FastAPI reads the exercise catalogue from JSON files packaged with the project. For registration, sessions, and uploaded photos it connects to PostgreSQL. The database tables belong to the separate \texttt{ruatoan\_basic} schema.
@@ -60,10 +60,11 @@ The project intentionally does not put the full question catalogue into PostgreS
 \textbf{Table} & \textbf{Important fields} & \textbf{Purpose}\\
 \midrule
 \texttt{ruatoan\_basic.users} & \texttt{id}, \texttt{name}, \texttt{email}, \texttt{password\_hash}, \texttt{created\_at} & One row per registered account; email is unique.\\
-\texttt{ruatoan\_basic.photos} & \texttt{id}, \texttt{user\_id}, \texttt{file\_name}, \texttt{content\_type}, \texttt{image\_data}, \texttt{created\_at} & Stores image bytes and metadata. \texttt{user\_id} links each image to its owner.\\
+\texttt{ruatoan\_basic.photos} & \texttt{id}, \texttt{user\_id}, \texttt{problem\_id}, \texttt{file\_name}, \texttt{content\_type}, \texttt{image\_data}, \texttt{created\_at} & Stores image bytes, optional \texttt{problem\_id} reference, and metadata. \texttt{user\_id} links each image to its owner.\\
+\texttt{ruatoan\_basic.password\_resets} & \texttt{token\_hash}, \texttt{user\_id}, \texttt{expires\_at}, \texttt{created\_at} & Stores SHA-256 hashed password reset tokens with a 30-minute expiration.\\
 \bottomrule
 \end{tabularx}
-\caption{Two PostgreSQL tables created for the basic project.}
+\caption{Three PostgreSQL tables created for the basic project.}
 \label{tab:basic-tables}
 \end{table}
 

@@ -1,12 +1,12 @@
 \section{Results and Conclusion}
 \subsection{Implemented result}
-Rùa Toán Basic provides a separate beginner-oriented implementation with these connected parts:
+Rùa Toán Basic provides a complete, beginner-friendly implementation with these connected parts:
 \begin{itemize}
   \item A plain HTML home page and separate HTML pages for practice, exam collections, lessons, library, sign-in, registration, and submissions.
-  \item One responsive CSS file and small page-specific JavaScript files.
-  \item FastAPI endpoints for catalogue data, account actions, current-session lookup, and account-owned photo actions.
-  \item JSON content for questions, lessons, books, and documents; PostgreSQL tables for user accounts and submitted photos.
-  \item A README that shows the folder layout, environment settings, local run command, and API paths.
+  \item Ported retro-arcade design tokens (\texttt{original.css}) paired with responsive page styles (\texttt{style.css}), custom Chibi Ninja Turtle SVG mascots, safe Markdown + MathJax rendering, Lightbox photo preview, and browser-side grayscale WebP image compression (\texttt{common.js}).
+  \item FastAPI endpoints for catalogue data, deterministic daily problems, account actions, password change/reset, current-session lookup, and account-owned photo actions (including per-problem photo attachments).
+  \item JSON content for questions, lessons, books, and documents; three PostgreSQL tables (\texttt{users}, \texttt{photos}, \texttt{password\_resets}) for user accounts, submitted homework photos, and password reset tokens.
+  \item Deployment configurations for both Render (\texttt{render.yaml}) and Vercel (\texttt{vercel.json}), local PostgreSQL scripts, and an automated smoke test suite (\texttt{scripts/smoke\_test.py}).
 \end{itemize}
 The catalogue scale is useful for demonstrating that a read-only set of thousands of collections can remain as prepared JSON while the smaller changing user records are stored in PostgreSQL. It does not establish that JSON is faster than PostgreSQL for every workload; a performance comparison would require a defined dataset, equivalent queries, and measured tests.
 

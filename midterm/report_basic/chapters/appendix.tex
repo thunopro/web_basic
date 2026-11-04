@@ -6,16 +6,18 @@
 \toprule
 \textbf{Method} & \textbf{Path} & \textbf{Purpose}\\
 \midrule
-GET & \texttt{/api/stats} & Return counts for the content catalogue.\\
-GET & \texttt{/api/collections} & Search and paginate collection records.\\
-GET & \texttt{/api/collections/\{id\}} & Return one collection with ordered problems.\\
-GET & \texttt{/api/problems} & Search individual questions by text, grade, topic, and page.\\
-GET & \texttt{/api/lessons} & Return or search lesson records.\\
-GET & \texttt{/api/books}, \texttt{/api/docs} & Return or search learning materials.\\
-POST & \texttt{/api/register}, \texttt{/api/login} & Create account or start a session.\\
+GET & \texttt{/api/stats}, \texttt{/api/daily} & Return catalogue counts and the deterministic daily problem.\\
+GET & \texttt{/api/collections} & Search (accent-insensitive) and filter collection records by kind, grade, and page.\\
+GET & \texttt{/api/collections/\{id\}} & Return one collection with ordered problems and source metadata.\\
+GET & \texttt{/api/problems} & Search individual questions by text, grade, canonical topic, and page.\\
+GET & \texttt{/api/lessons} & Return or search lesson records (with examples and Markdown body).\\
+GET & \texttt{/api/books}, \texttt{/api/docs} & Return or search books, magazines, and PDF documents.\\
+POST & \texttt{/api/register}, \texttt{/api/login} & Create account or start a signed HttpOnly cookie session.\\
 POST & \texttt{/api/logout}; GET \texttt{/api/me} & End the session or read the signed-in account.\\
-GET/POST & \texttt{/api/photos} & List photos or upload new photos for the current account.\\
-GET/DELETE & \texttt{/api/photos/\{id\}} & View or delete an account-owned image.\\
+POST & \texttt{/api/change-password} & Change password for the signed-in account.\\
+POST & \texttt{/api/request-reset}, \texttt{/api/reset-password} & Generate a 30-minute reset token and set a new password.\\
+GET/POST & \texttt{/api/photos} & List photos (optionally filtered by \texttt{problem}) or upload compressed photos.\\
+GET/DELETE & \texttt{/api/photos/\{id\}} & View (\texttt{nosniff}) or delete an account-owned image.\\
 \bottomrule
 \end{tabularx}
 \caption{Main API routes in the basic project.}

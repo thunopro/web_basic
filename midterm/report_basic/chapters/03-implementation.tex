@@ -6,19 +6,22 @@ ruatoan_basic/
 |-- main.py                 # FastAPI entry point
 |-- backend/
 |   |-- main.py             # API paths and page responses
-|   |-- database.py         # PostgreSQL connection and tables
-|   |-- auth.py             # password hash and signed cookie
-|   `-- content.py          # read JSON files
+|   |-- database.py         # PostgreSQL connection and 3 tables
+|   |-- auth.py             # PBKDF2 hash, signed cookie, reset token hash
+|   `-- content.py          # read JSON files and fold Vietnamese accents
 |-- public/
 |   |-- index.html          # home page
-|   |-- pages/              # practice, exams, lessons, account pages
-|   |-- css/style.css       # website appearance
-|   |-- js/                 # browser actions, one file per page
-|   |-- images/             # website images
-|   `-- data/               # exercise, lesson, book, and document JSON
+|   |-- pages/              # practice, exams, lessons, library, auth, submissions
+|   |-- css/original.css    # ported design tokens and arcade components
+|   |-- css/style.css       # responsive layout, lightbox, and page styles
+|   |-- js/                 # browser actions (common.js + one file per page)
+|   `-- images/             # website images
+|-- data/                   # exercise, lesson, book, and document JSON
+|-- scripts/                # smoke_test.py and local PostgreSQL helper scripts
 |-- requirements.txt        # Python packages
 |-- .env.example            # names of required environment values
-`-- vercel.json             # Vercel function file settings
+|-- render.yaml             # Render Blueprint deployment configuration
+`-- vercel.json             # Vercel routing and function settings
 \end{lstlisting}
 
 \subsection{Browser to backend request}
@@ -27,20 +30,20 @@ A page starts as HTML. The browser downloads its linked CSS and JavaScript files
 This separation has a small number of concepts: HTML elements, CSS selectors, JavaScript event handlers, an HTTP request, a Python function, and a JSON response. No frontend framework is required.
 
 \subsection{Reading the content files}
-\texttt{backend/content.py} loads the prepared JSON files from \texttt{public/data}. It combines collection files, keeps the collection copy with more questions when an ID repeats, and removes a question ID already shown in an earlier collection. Lessons are combined from their JSON files. Books and documents are read from their own files. A simple in-memory cache avoids parsing every JSON file for every API request in one running process.
+\texttt{backend/content.py} loads the prepared JSON files from \texttt{data/} (or \texttt{public/data/}). It combines collection files, keeps the collection copy with more questions when an ID repeats, and removes a question ID already shown in an earlier collection. Lessons are combined from their JSON files. Books and documents are read from their own files. A simple in-memory cache avoids parsing every JSON file for every API request in one running process.
 
-The catalogue is read-only. The API returns a maximum of 50 collections per list request. Search in this basic version checks collection title and province. Problem search folds Vietnamese accents and can filter by topic and grade. Collection search has fewer filters than the original application.
+The catalogue is read-only. The API returns up to 50 collections or problems per list request. Search across collections, problems, lessons, books, and documents folds Vietnamese accents (\texttt{fold\_text}) so queries with or without diacritics match reliably. Problem search also maps canonical topic slugs (\texttt{so-hoc}, \texttt{dai-so}, \texttt{hinh-hoc}, \texttt{to-hop}) to their underlying dataset aliases.
 
 \subsection{Account and session flow}
-The registration page sends a name, email, and password to \texttt{POST /api/register}. The backend requires a password of at least eight characters, creates a random salt, and uses Python's PBKDF2-HMAC-SHA256 to produce the value saved in \texttt{password\_hash}. It inserts the account into PostgreSQL, then issues a signed cookie. Login reads the account by email and compares a new password hash with the stored hash using a constant-time comparison. Logout expires the cookie. The browser asks \texttt{GET /api/me} to decide whether to show the signed-in name or a login link.
+The registration page sends a name, email, and password to \texttt{POST /api/register}. The backend requires a password of at least eight characters, creates a random salt, and uses Python's PBKDF2-HMAC-SHA256 to produce the value saved in \texttt{password\_hash}. It inserts the account into PostgreSQL, then issues a signed cookie. Login reads the account by email and compares a new password hash with the stored hash using a constant-time comparison. Logout expires the cookie. The browser asks \texttt{GET /api/me} to decide whether to show the signed-in name or a login link. Signed-in users can also update their password via \texttt{POST /api/change-password}, or reset a forgotten password via \texttt{POST /api/request-reset} and \texttt{POST /api/reset-password} (which stores a SHA-256 hash of a single-use token expiring in 30 minutes; raw tokens are only returned in responses when \texttt{PASSWORD\_RESET\_DEBUG=true} for local testing).
 
-The cookie contains an account ID and expiry time with an HMAC signature. The browser cannot read the cookie through JavaScript because the cookie is marked HttpOnly. The cookie is secure on HTTPS and uses SameSite=Lax. This is a compact teaching example. A production system should also consider password reset, email verification, rate limiting, stronger session rotation, and security review.
+The cookie contains an account ID and expiry time with an HMAC signature. The browser cannot read the cookie through JavaScript because the cookie is marked HttpOnly. The cookie is secure on HTTPS and uses SameSite=Lax.
 
 \subsection{Photo submission flow}
-The submission page sends selected files to \texttt{POST /api/photos} using \texttt{FormData}. The API requires a signed-in user, accepts up to six JPEG, PNG, or WebP files, and limits each file to 1.5 MB. The file bytes are inserted into the PostgreSQL \texttt{BYTEA} column. Listing, viewing, and deletion queries include the current user ID, so one account cannot request another account's image by guessing a photo ID. Images are not compressed in the browser in this basic version.
+Before uploading, the browser-side helper \texttt{compressImage()} in \texttt{public/js/common.js} draws each selected image onto an HTML5 canvas, scales its longest side down to at most 1000 pixels, converts it to grayscale for high-contrast handwriting legibility, and encodes it as a WebP blob (\texttt{quality = 0.82}). The submission page (as well as the inline upload buttons on the daily problem and exam detail pages) sends the resulting files to \texttt{POST /api/photos} using \texttt{FormData}, optionally tagging the upload with \texttt{problem\_id}. The API requires a signed-in user, accepts up to six JPEG, PNG, or WebP files, and limits each file to 1.5 MB. The file bytes are inserted into the PostgreSQL \texttt{BYTEA} column. Listing, viewing, and deletion queries include the current user ID, so one account cannot request another account's image by guessing a photo ID.
 
 \subsection{Bookmarks and page behaviour}
-Problem bookmarks are saved in browser \texttt{localStorage}. This makes the example easy to follow and avoids a new database table, but bookmarks belong to one browser and do not follow the user to another device. The practice list has a grade selector, title/province search, and a next-page button. Collection view preserves problem order. Lessons can be searched and expanded. Books and documents can be filtered by text and opened at their recorded external URL.
+Problem bookmarks are saved in browser \texttt{localStorage} and displayed in a dedicated ``Bài đã lưu'' section on the home page as well as toggleable bookmark buttons on problem cards. The practice page provides interactive topic tabs, a grade selector, accent-insensitive text search, and pagination. The exam collection page filters by exam category (\textit{HSG}, \textit{Vào 10}, \textit{Tạp chí}, \textit{Chuyên đề}, \textit{Olympic}), search query, and grade, and opens individual exams in a full-width printable view (\texttt{.de}) with source order preserved. Lessons can be filtered by topic, searched, and expanded inline with full Markdown and practice examples. Books and documents can be filtered by topic and text and opened or downloaded via their recorded external URLs.
 
 \subsection{Running locally}
 The README gives these beginner commands after Python and PostgreSQL settings have been prepared:
